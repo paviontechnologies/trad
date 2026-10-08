@@ -152,7 +152,15 @@ export default function ReportsPage() {
 
       {/* Dynamic Report Data Table Preview */}
       <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-        <h3 className="text-sm font-bold text-white">Live Data Preview ({dateRange})</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-white px-2 py-1 rounded-lg">
+              <img src="/logo.png" alt="Pavion Technologies" className="h-4 w-auto object-contain" />
+            </div>
+            <h3 className="text-sm font-bold text-white">Live Data Preview ({dateRange})</h3>
+          </div>
+          <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">CONFIDENTIAL & PROPRIETARY</span>
+        </div>
 
         <div className="overflow-x-auto">
           {reportType === 'attendance' && (

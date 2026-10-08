@@ -97,6 +97,25 @@ export default function SettingsPage() {
       {activeTab === 'org' && (
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 max-w-2xl">
           <h3 className="text-sm font-bold text-white">Company Identity & Location</h3>
+          
+          {/* Official Brand Logo preview */}
+          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-700">
+                <img
+                  src="/logo.png"
+                  alt="Pavion Technologies Pvt. Ltd."
+                  className="h-6 w-auto object-contain"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">Official Brand Logo</p>
+                <p className="text-[10px] text-slate-400">Primary enterprise insignia & letterhead asset</p>
+              </div>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Active</span>
+          </div>
+
           <div className="space-y-4 text-xs">
             <div>
               <label className="block text-slate-400 font-semibold mb-1">Company Legal Name</label>

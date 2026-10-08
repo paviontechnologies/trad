@@ -5,6 +5,9 @@ import { AuthProvider } from '../lib/auth-context';
 export const metadata: Metadata = {
   title: 'PAVION — Workforce Monitoring & Business Management Platform',
   description: 'Enterprise Centralized Platform for Workforce Management, Productivity Monitoring, Payroll, Security Auditing and Operations.',
+  icons: {
+    icon: '/logo.png',
+  },
 };
 
 export default function RootLayout({

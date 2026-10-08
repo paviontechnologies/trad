@@ -235,16 +235,17 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen sticky top-0 shrink-0 select-none z-30">
       {/* Brand logo header */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-md shadow-indigo-600/30">
-          <ShieldCheck className="w-5 h-5 text-white" />
-        </div>
-        <div className="flex flex-col min-w-0">
-          <span className="font-extrabold text-base tracking-wider text-white">PAVION</span>
-          <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider truncate">
-            {role.toUpperCase()}
-          </span>
-        </div>
+      <div className="h-16 flex items-center px-4 border-b border-slate-800 gap-2 justify-between">
+        <Link href="/dashboard" className="flex items-center min-w-0 bg-white px-2.5 py-1 rounded-xl shadow-sm border border-slate-700/60 hover:opacity-95 transition-opacity">
+          <img
+            src="/logo.png"
+            alt="Pavion Technologies Pvt. Ltd."
+            className="h-6 w-auto object-contain max-w-[125px]"
+          />
+        </Link>
+        <span className="px-2 py-0.5 text-[9px] uppercase font-extrabold tracking-wider rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0">
+          {role.toUpperCase()}
+        </span>
       </div>
 
       {/* Navigation menu list */}

@@ -57,12 +57,15 @@ export default function LoginPage() {
       {/* Main card */}
       <div className="w-full max-w-md relative z-10">
         {/* Brand header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-400 shadow-xl shadow-indigo-500/25 border border-indigo-400/30 mb-4">
-            <ShieldCheck className="w-8 h-8 text-white" />
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="bg-white px-6 py-3 rounded-2xl shadow-xl shadow-indigo-950/60 border border-slate-700/40 mb-3 inline-flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="Pavion Technologies Pvt. Ltd."
+              className="h-9 md:h-11 w-auto object-contain"
+            />
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">PAVION</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs md:text-sm font-medium text-slate-400 mt-1">
             Workforce Monitoring & Business Management Platform
           </p>
         </div>

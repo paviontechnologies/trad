@@ -368,10 +368,19 @@ export default function PayrollPage() {
           <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full p-8 shadow-2xl animate-in zoom-in-95 duration-150 text-slate-100">
             {/* Payslip Header */}
             <div className="flex items-center justify-between pb-6 border-b border-slate-700">
-              <div>
-                <h2 className="text-xl font-black text-white">PAVION TECHNOLOGIES PVT LTD</h2>
-                <p className="text-xs text-slate-400">Level 5, Embassy TechVillage, Outer Ring Road, Bengaluru 560103</p>
-                <p className="text-[10px] text-slate-500 font-mono mt-0.5">GSTIN: 29ABCDE1234F1Z5 • CIN: U72200KA2022PTC158912</p>
+              <div className="flex items-center gap-3">
+                <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-600 shrink-0">
+                  <img
+                    src="/logo.png"
+                    alt="Pavion Technologies Pvt. Ltd."
+                    className="h-7 w-auto object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-white">PAVION TECHNOLOGIES PVT LTD</h2>
+                  <p className="text-[11px] text-slate-400">Level 5, Embassy TechVillage, Outer Ring Road, Bengaluru 560103</p>
+                  <p className="text-[10px] text-slate-500 font-mono mt-0.5">GSTIN: 29ABCDE1234F1Z5 • CIN: U72200KA2022PTC158912</p>
+                </div>
               </div>
               <div className="text-right">
                 <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
