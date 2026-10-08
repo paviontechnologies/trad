@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+.next/
+frontend/.next/
+frontend/out/
+
+# NestJS / Builds
+dist/
+build/
+backend/dist/
+
+# Prisma
+*.db
+*.sqlite
+
+# Misc & OS
+.DS_Store
+*/.DS_Store
+**/.DS_Store
+*.pem
+*.log
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local environment secrets
+.env
+.env*.local
+backend/.env
+frontend/.env.local
+frontend/.env*.local
+!**/.env.example

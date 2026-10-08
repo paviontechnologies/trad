@@ -1,0 +1,275 @@
+// Prisma Schema for PAVION: Employee Monitoring & Business Management Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String
+  fullName     String
+  role         String      @default("Employee") // Super Admin, Management, HR, Finance, Manager, Trader, Employee
+  isActive     Boolean     @default(true)
+  employee     Employee?
+  auditLogs    AuditLog[]
+  notifications Notification[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Department {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  code        String     @unique
+  headName    String?
+  employees   Employee[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Employee {
+  id              String             @id @default(uuid())
+  empId           String             @unique // EMP001
+  fullName        String
+  email           String             @unique
+  phone           String?
+  designation     String
+  roleName        String             @default("Employee")
+  departmentId    String
+  department      Department         @relation(fields: [departmentId], references: [id])
+  managerName     String?
+  managerId       String?
+  joiningDate     DateTime
+  salary          Float              @default(50000)
+  employmentType  String             @default("Full-Time") // Full-Time, Contract, Intern
+  status          String             @default("Active") // Active, On Leave, Inactive
+  avatarUrl       String?
+  userId          String?            @unique
+  user            User?              @relation(fields: [userId], references: [id])
+  attendances     Attendance[]
+  leaveRequests   LeaveRequest[]
+  leaveBalance    LeaveBalance?
+  tasks           Task[]
+  activitySessions ActivitySession[]
+  appUsages       ApplicationUsage[]
+  webUsages       WebsiteUsage[]
+  payrolls        Payroll[]
+  payslips        Payslip[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model Attendance {
+  id               String            @id @default(uuid())
+  employeeId       String
+  employee         Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date             String            // YYYY-MM-DD
+  checkIn          String?           // HH:mm
+  checkOut         String?           // HH:mm
+  workingMinutes   Int               @default(0)
+  breakMinutes     Int               @default(0)
+  overtimeMinutes  Int               @default(0)
+  status           String            @default("Present") // Present, Absent, Half Day, On Leave, Late
+  breaks           AttendanceBreak[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([employeeId, date])
+}
+
+model AttendanceBreak {
+  id           String     @id @default(uuid())
+  attendanceId String
+  attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  startTime    String
+  endTime      String?
+  durationMins Int        @default(0)
+  createdAt    DateTime   @default(now())
+}
+
+model LeaveRequest {
+  id           String    @id @default(uuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType    String    // Annual, Sick, Casual, Maternity, Unpaid
+  startDate    String    // YYYY-MM-DD
+  endDate      String    // YYYY-MM-DD
+  daysCount    Int       @default(1)
+  reason       String
+  attachment   String?
+  status       String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedBy   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model LeaveBalance {
+  id          String   @id @default(uuid())
+  employeeId  String   @unique
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  annualTotal Int      @default(14)
+  annualUsed  Int      @default(0)
+  sickTotal   Int      @default(10)
+  sickUsed    Int      @default(0)
+  casualTotal Int      @default(8)
+  casualUsed  Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  dueDate     String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ActivitySession {
+  id                 String   @id @default(uuid())
+  employeeId         String
+  employee           Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date               String   // YYYY-MM-DD
+  sessionStart       String   // HH:mm
+  sessionEnd         String?
+  activeMinutes      Int      @default(0)
+  idleMinutes        Int      @default(0)
+  productivityScore  Int      @default(75) // Percentage 0-100
+  createdAt          DateTime @default(now())
+}
+
+model ApplicationUsage {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date            String   // YYYY-MM-DD
+  appName         String   // VS Code, Slack, Chrome, YouTube, Excel
+  category        String   // Development, Communication, Browsing, Entertainment
+  durationMinutes Int
+  productivityType String  // Productive, Neutral, Non-productive
+  createdAt       DateTime @default(now())
+}
+
+model WebsiteUsage {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date            String   // YYYY-MM-DD
+  domain          String   // github.com, google.com, youtube.com
+  category        String   // Code, Search, Video, Social
+  durationMinutes Int
+  productivityType String  // Productive, Neutral, Non-productive
+  createdAt       DateTime @default(now())
+}
+
+model Payroll {
+  id              String    @id @default(uuid())
+  employeeId      String
+  employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  month           String    // e.g. "October 2026"
+  basicSalary     Float     @default(40000)
+  hra             Float     @default(10000)
+  bonus           Float     @default(5000)
+  overtimePay     Float     @default(3000)
+  grossSalary     Float     @default(58000)
+  pfDeduction     Float     @default(2400)
+  taxDeduction    Float     @default(1500)
+  otherDeductions Float     @default(500)
+  netSalary       Float     @default(53600)
+  status          String    @default("PROCESSED") // PROCESSED, PENDING
+  payslips        Payslip[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([employeeId, month])
+}
+
+model Payslip {
+  id            String   @id @default(uuid())
+  payrollId     String
+  payroll       Payroll  @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+  employeeId    String
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  payslipNumber String   @unique // PAY-2026-10-001
+  monthYear     String
+  grossSalary   Float
+  netSalary     Float
+  generatedAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName  String   @default("System")
+  action    String   // LOGIN_SUCCESS, FAILED_LOGIN, EXPORT_REPORT, UNAUTHORIZED_ACCESS, etc.
+  module    String   // Web, Payroll, Employee, Security, Trading
+  details   String?
+  ipAddress String   @default("192.168.1.104")
+  device    String   @default("Chrome / macOS")
+  status    String   @default("Success") // Success, Failed, Warning
+  timestamp DateTime @default(now())
+}
+
+model SecurityAlert {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  alertType   String   // FAILED_LOGIN, EXTERNAL_SHARE, UNAUTHORIZED_ACCESS, DATA_EXPORT, PERMISSION_VIOLATION
+  severity    String   @default("HIGH") // LOW, MEDIUM, HIGH, CRITICAL
+  targetUser  String?
+  isResolved  Boolean  @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model Trade {
+  id          String   @id @default(uuid())
+  tradeCode   String   @unique // TRD-9812
+  traderName  String
+  symbol      String   // NIFTY, RELIANCE, TCS, INFY
+  type        String   // BUY, SELL
+  quantity    Int
+  entryPrice  Float
+  exitPrice   Float?
+  pnl         Float    @default(0)
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, EXECUTED
+  timestamp   DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model OrganizationSetting {
+  id                      String   @id @default(uuid())
+  companyName             String   @default("PAVION Technologies Pvt Ltd")
+  logoUrl                 String?
+  address                 String   @default("Level 5, Embassy TechVillage, Outer Ring Road, Bengaluru, Karnataka 560103")
+  workingHoursPerDay      Float    @default(8.5)
+  breakDurationMinutes    Int      @default(60)
+  overtimeThresholdHours  Float    @default(8.5)
+  sessionTimeoutMinutes   Int      @default(30)
+  passwordExpiryDays      Int      @default(90)
+  twoFactorAuthRequired   Boolean  @default(false)
+  updatedAt               DateTime @updatedAt
+}
