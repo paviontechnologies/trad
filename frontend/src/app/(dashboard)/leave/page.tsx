@@ -53,12 +53,23 @@ export default function LeaveManagementPage() {
     });
   };
 
-  const filteredRequests = leaveRequests.filter((r) => {
+  const canApprove = role === 'Super Admin' || role === 'HR' || role === 'Manager';
+  const isEmployee = role === 'Employee';
+
+  // For Employee: Show ONLY their own leave requests
+  // For Manager/HR/Admin: Show workforce or team leave requests
+  const baseRequests = isEmployee
+    ? leaveRequests.filter((r) => r.empId === 'EMP001' || r.employeeName === 'Rahul Bajediyal')
+    : role === 'Manager'
+    ? leaveRequests.filter((r) => r.departmentName === 'Information Technology' || r.empId === 'EMP001')
+    : leaveRequests;
+
+  const filteredRequests = baseRequests.filter((r) => {
     if (filterStatus === 'ALL') return true;
     return r.status === filterStatus;
   });
 
-  const pendingRequests = leaveRequests.filter((r) => r.status === 'PENDING');
+  const pendingRequests = baseRequests.filter((r) => r.status === 'PENDING');
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -66,13 +77,23 @@ export default function LeaveManagementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            Leave & Time-Off Management
-            <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              {pendingRequests.length} Pending Approval
+            {isEmployee ? 'My Leave & Time-Off' : 'Leave & Time-Off Management'}
+            <span
+              className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
+                pendingRequests.length > 0
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+              }`}
+            >
+              {isEmployee
+                ? `${pendingRequests.length} Pending Review`
+                : `${pendingRequests.length} Pending Approval`}
             </span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Submit leave requests, manage balance accruals, and process manager/HR approval workflows.
+            {isEmployee
+              ? 'View your annual leave entitlements, submit time-off requests, and track manager reviews.'
+              : 'Submit leave requests, manage balance accruals, and process manager/HR approval workflows.'}
           </p>
         </div>
 
@@ -85,10 +106,14 @@ export default function LeaveManagementPage() {
         </button>
       </div>
 
-      {/* Leave Balances Grid (Rahul Bajediyal) */}
+      {/* Leave Balances Grid */}
       <div>
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-          My Available Entitlements (Rahul Bajediyal • CY 2026)
+          {isEmployee
+            ? 'My Available Entitlements (Rahul Bajediyal • CY 2026)'
+            : role === 'Manager'
+            ? 'Team Entitlement Norms (IT Department • CY 2026)'
+            : 'Company Leave Entitlement Policy (CY 2026)'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl flex flex-col justify-between">
@@ -144,28 +169,41 @@ export default function LeaveManagementPage() {
         </div>
       </div>
 
-      {/* Manager Approval Queue (Actionable Demo Section) */}
+      {/* Leave Requests Queue / History */}
       <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              Manager Action Queue ({pendingRequests.length} Pending Approval)
+              {isEmployee ? (
+                <>
+                  <FileText className="w-4 h-4 text-indigo-400" />
+                  My Leave Applications & History
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  {role === 'Manager'
+                    ? `Team Leave Approval Queue (${pendingRequests.length} Pending)`
+                    : `HR & Executive Approval Queue (${pendingRequests.length} Pending)`}
+                </>
+              )}
             </h3>
             <p className="text-xs text-slate-400">
-              Client Demo: Click <strong>Approve</strong> or <strong>Reject</strong> to trigger live workflow updates!
+              {isEmployee
+                ? 'Your submitted leave requests are automatically sent to your reporting manager (Amit Verma • IT Team Lead) for review.'
+                : 'Client Demo: Click Approve or Reject to process workforce time-off requests.'}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
             {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((st) => (
               <button
                 key={st}
                 onClick={() => setFilterStatus(st)}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                   filterStatus === st
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-indigo-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 {st}
@@ -174,74 +212,112 @@ export default function LeaveManagementPage() {
           </div>
         </div>
 
+        {/* Informative notice for employee when leaves are pending */}
+        {isEmployee && pendingRequests.length > 0 && (
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2.5 text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+              <span>
+                You have <strong>{pendingRequests.length} leave application(s)</strong> awaiting review by <strong>Amit Verma (Team Manager)</strong>.
+              </span>
+            </div>
+            <span className="text-[11px] font-semibold text-amber-400 hidden sm:inline">Awaiting Manager Sign-off</span>
+          </div>
+        )}
+
         <div className="space-y-3">
-          {filteredRequests.map((req) => (
-            <div
-              key={req.id}
-              className={`p-4 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                req.status === 'PENDING'
-                  ? 'bg-slate-950/80 border-indigo-500/30'
-                  : 'bg-slate-950/40 border-slate-800'
-              }`}
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-white text-sm">{req.employeeName}</span>
-                  <span className="text-slate-400 font-mono text-xs">({req.empId})</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
-                    {req.departmentName}
-                  </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300">
-                    {req.leaveType} Leave • {req.daysCount} Day(s)
-                  </span>
+          {filteredRequests.length === 0 ? (
+            <div className="text-center py-8 text-slate-500 text-xs">
+              No leave requests found matching this filter.
+            </div>
+          ) : (
+            filteredRequests.map((req) => (
+              <div
+                key={req.id}
+                className={`p-4 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                  req.status === 'PENDING'
+                    ? 'bg-slate-950/80 border-amber-500/30'
+                    : 'bg-slate-950/40 border-slate-800'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-white text-sm">{req.employeeName}</span>
+                    <span className="text-slate-400 font-mono text-xs">({req.empId})</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                      {req.departmentName}
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300">
+                      {req.leaveType} Leave • {req.daysCount} Day(s)
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300">
+                    <strong className="text-slate-400">Reason:</strong> {req.reason}
+                  </p>
+                  <div className="text-[11px] text-slate-400">
+                    Dates: <strong className="text-white font-mono">{req.startDate}</strong> to{' '}
+                    <strong className="text-white font-mono">{req.endDate}</strong>
+                    {req.approvedBy && (
+                      <span className="ml-3 text-emerald-400">
+                        • {req.status === 'APPROVED' ? 'Approved by' : 'Reviewed by'} {req.approvedBy}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-slate-300">
-                  <strong className="text-slate-400">Reason:</strong> {req.reason}
-                </p>
-                <div className="text-[11px] text-slate-400">
-                  Dates: <strong className="text-white font-mono">{req.startDate}</strong> to{' '}
-                  <strong className="text-white font-mono">{req.endDate}</strong>
-                  {req.approvedBy && (
-                    <span className="ml-3 text-emerald-400">
-                      • Reviewed by {req.approvedBy}
+
+                {/* Status and Action Buttons */}
+                <div className="flex items-center gap-3 shrink-0">
+                  {req.status === 'PENDING' ? (
+                    canApprove ? (
+                      /* ONLY Manager, HR, Super Admin can see Approve / Reject buttons */
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => approveLeave(req.id)}
+                          className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all transform active:scale-95"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Approve</span>
+                        </button>
+                        <button
+                          onClick={() => rejectLeave(req.id)}
+                          className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md transition-all transform active:scale-95"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Reject</span>
+                        </button>
+                      </div>
+                    ) : (
+                      /* Employee sees status badge without action buttons */
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Awaiting Manager Review</span>
+                      </div>
+                    )
+                  ) : (
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${
+                        req.status === 'APPROVED'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      }`}
+                    >
+                      {req.status === 'APPROVED' ? (
+                        <>
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Approved</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Rejected</span>
+                        </>
+                      )}
                     </span>
                   )}
                 </div>
               </div>
-
-              {/* Status and Action Buttons */}
-              <div className="flex items-center gap-3 shrink-0">
-                {req.status === 'PENDING' ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => approveLeave(req.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all transform active:scale-95"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>Approve</span>
-                    </button>
-                    <button
-                      onClick={() => rejectLeave(req.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600/80 hover:bg-rose-600 text-white shadow-md transition-all transform active:scale-95"
-                    >
-                      <XCircle className="w-3.5 h-3.5" />
-                      <span>Reject</span>
-                    </button>
-                  </div>
-                ) : (
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      req.status === 'APPROVED'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                    }`}
-                  >
-                    {req.status === 'APPROVED' ? '✓ Approved' : '✕ Rejected'}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 

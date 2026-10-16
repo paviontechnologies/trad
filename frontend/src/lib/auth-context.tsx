@@ -233,24 +233,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const approveLeave = (id: string) => {
+    if (role === 'Employee' || role === 'Trader') {
+      showToast('Access Denied: Only Managers and HR can approve leaves', 'error');
+      return;
+    }
+    const reviewerTitle =
+      role === 'Manager'
+        ? 'Amit Verma (Team Manager)'
+        : role === 'HR'
+        ? 'Priya Sharma (HR Lead)'
+        : 'Vikram Malhotra (Super Admin)';
+
     setLeaveRequests((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, status: 'APPROVED', approvedBy: `${user?.fullName} (${role})` } : l))
+      prev.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              status: 'APPROVED',
+              approvedBy: reviewerTitle,
+              reviewedAt: new Date().toISOString().split('T')[0],
+            }
+          : l
+      )
     );
     // Update balance
     setLeaveBalances((prev) => ({
       ...prev,
       annual: { ...prev.annual, used: prev.annual.used + 1, remaining: Math.max(0, prev.annual.remaining - 1) },
     }));
-    addAuditLog('LEAVE_APPROVED', 'Leave Management', `Approved leave request #${id}`);
-    showToast(`Leave request approved successfully!`, 'success');
+    addAuditLog('LEAVE_APPROVED', 'Leave Management', `Approved leave request #${id} by ${reviewerTitle}`);
+    showToast(`Leave request approved by ${reviewerTitle}!`, 'success');
   };
 
   const rejectLeave = (id: string) => {
+    if (role === 'Employee' || role === 'Trader') {
+      showToast('Access Denied: Only Managers and HR can reject leaves', 'error');
+      return;
+    }
+    const reviewerTitle =
+      role === 'Manager'
+        ? 'Amit Verma (Team Manager)'
+        : role === 'HR'
+        ? 'Priya Sharma (HR Lead)'
+        : 'Vikram Malhotra (Super Admin)';
+
     setLeaveRequests((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, status: 'REJECTED', approvedBy: `${user?.fullName} (${role})` } : l))
+      prev.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              status: 'REJECTED',
+              approvedBy: reviewerTitle,
+              reviewedAt: new Date().toISOString().split('T')[0],
+            }
+          : l
+      )
     );
-    addAuditLog('LEAVE_REJECTED', 'Leave Management', `Rejected leave request #${id}`, 'Failed');
-    showToast(`Leave request marked as rejected`, 'error');
+    addAuditLog('LEAVE_REJECTED', 'Leave Management', `Rejected leave request #${id} by ${reviewerTitle}`, 'Failed');
+    showToast(`Leave request rejected by ${reviewerTitle}`, 'error');
   };
 
   // Punch actions

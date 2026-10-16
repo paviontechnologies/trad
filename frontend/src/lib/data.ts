@@ -357,7 +357,7 @@ export const initialLeaveRequests: LeaveRequest[] = [
     daysCount: 1,
     reason: 'Personal banking and documentation work',
     status: 'APPROVED',
-    approvedBy: 'Amit Patel (Manager)',
+    approvedBy: 'Amit Verma (Team Manager)',
     reviewedAt: '2026-09-10',
   },
 ];
