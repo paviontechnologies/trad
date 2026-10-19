@@ -16,6 +16,17 @@ import {
   Filter,
   Download,
   Sparkles,
+  Utensils,
+  ChevronDown,
+  ChevronUp,
+  Timer,
+  History,
+  FileText,
+  Check,
+  Activity,
+  ArrowRight,
+  ShieldCheck,
+  Info,
 } from 'lucide-react';
 
 export default function AttendancePage() {
@@ -31,12 +42,15 @@ export default function AttendancePage() {
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'today' | 'history' | 'hr-view'>('today');
-  const [filterMonth, setFilterMonth] = useState('October 2026');
+  const [selectedBreakType, setSelectedBreakType] = useState('Lunch Break');
+  const [viewMode, setViewMode] = useState<'breaks' | 'events'>('breaks');
+  const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
+  const [historySearch, setHistorySearch] = useState('');
 
   const lateArrivals = [
-    { name: 'Priya Sharma', empId: 'EMP003', dept: 'HR', checkIn: '09:25 AM', delay: '25 mins', reason: 'Metro delay' },
-    { name: 'Diya Sengupta', empId: 'EMP013', dept: 'IT', checkIn: '09:32 AM', delay: '32 mins', reason: 'Medical appointment' },
-    { name: 'Ishaan Bhatt', empId: 'EMP014', dept: 'Sales', checkIn: '09:40 AM', delay: '40 mins', reason: 'Client meeting' },
+    { name: 'Priya Sharma', empId: 'EMP003', dept: 'HR', date: '19 Oct 2026', checkIn: '09:25 AM', delay: '25 mins', reason: 'Metro delay' },
+    { name: 'Diya Sengupta', empId: 'EMP013', dept: 'IT', date: '19 Oct 2026', checkIn: '09:32 AM', delay: '32 mins', reason: 'Medical appointment' },
+    { name: 'Ishaan Bhatt', empId: 'EMP014', dept: 'Sales', date: '19 Oct 2026', checkIn: '09:40 AM', delay: '40 mins', reason: 'Client meeting' },
   ];
 
   const overtimeWorkers = [
@@ -44,6 +58,16 @@ export default function AttendancePage() {
     { name: 'Amit Patel', empId: 'EMP002', dept: 'IT', overtime: '1h 45m', totalHours: '9h 45m', approved: true },
     { name: 'Rohan Gupta', empId: 'EMP005', dept: 'Trading', overtime: '2h 10m', totalHours: '10h 10m', approved: true },
   ];
+
+  const filteredRecords = attendanceRecords.filter((rec) => {
+    if (!historySearch) return true;
+    const q = historySearch.toLowerCase();
+    return (
+      rec.employeeName?.toLowerCase().includes(q) ||
+      rec.department?.toLowerCase().includes(q) ||
+      rec.date.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -100,69 +124,124 @@ export default function AttendancePage() {
       {activeTab === 'today' && (
         <div className="space-y-6">
           {/* Main Interactive Punch Card */}
-          <div className="p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/40 border border-slate-800 shadow-2xl relative overflow-hidden">
+          <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/40 border border-slate-800 shadow-2xl relative overflow-hidden">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
               {/* Left Details */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              <div className="space-y-4 flex-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
                     Live Session Active
                   </span>
-                  <span className="text-slate-500">•</span>
-                  <span className="text-xs text-slate-400">Employee: Rahul Bajediyal (EMP001)</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-xs text-slate-300 font-medium">
+                    Employee: <strong className="text-white">Rahul Bajediyal</strong> (EMP001)
+                  </span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-xs text-indigo-400 font-mono flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {todayAttendance.date}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Check In</span>
-                    <div className="text-2xl font-black text-white mt-1">
+                {/* 4 Metrics KPI Grid with Exact Timestamps and Dates */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
+                  {/* Punch In */}
+                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-slate-700 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Punch In</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    </div>
+                    <div className="text-2xl font-black text-white font-mono mt-1">
                       {todayAttendance.checkIn || '--:--'}
                     </div>
-                    <span className="text-[10px] text-emerald-400 mt-1 block">✓ On Time</span>
+                    <div className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                      <span>✓ {todayAttendance.checkInDate || todayAttendance.date}</span>
+                    </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Working Time</span>
-                    <div className="text-2xl font-black text-indigo-400 font-mono mt-1">
+                  {/* Punch Out */}
+                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-slate-700 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Punch Out</span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${todayAttendance.checkOut ? 'bg-indigo-400' : 'bg-slate-500'}`} />
+                    </div>
+                    <div className="text-2xl font-black text-white font-mono mt-1">
+                      {todayAttendance.checkOut || (todayAttendance.isCheckedIn ? 'Active' : '--:--')}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1 truncate">
+                      {todayAttendance.checkOut
+                        ? `✓ ${todayAttendance.checkOutDate || todayAttendance.date}`
+                        : todayAttendance.isCheckedIn
+                        ? 'Shift In Progress'
+                        : 'Not Checked In'}
+                    </div>
+                  </div>
+
+                  {/* Working Time */}
+                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-slate-700 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Working Time</span>
+                      <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                    </div>
+                    <div className="text-2xl font-black text-indigo-300 font-mono mt-1">
                       {todayAttendance.workingTime}
                     </div>
-                    <span className="text-[10px] text-slate-500 mt-1 block">Target: 08h 30m</span>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      Target: 08h 30m
+                    </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Break Taken</span>
-                    <div className="text-2xl font-black text-amber-400 font-mono mt-1">
+                  {/* Break Taken */}
+                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-slate-700 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Break Taken</span>
+                      <Coffee className="w-3.5 h-3.5 text-amber-400" />
+                    </div>
+                    <div className="text-2xl font-black text-amber-300 font-mono mt-1">
                       {todayAttendance.breakTime}
                     </div>
-                    <span className="text-[10px] text-slate-500 mt-1 block">Max Allowed: 01h 00m</span>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Status</span>
-                    <div className="text-2xl font-black mt-1">
-                      <span
-                        className={`text-lg px-2.5 py-1 rounded-xl font-bold ${
-                          todayAttendance.isOnBreak
-                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            : todayAttendance.checkOut
-                            ? 'bg-slate-700 text-slate-300'
-                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        }`}
-                      >
-                        {todayAttendance.isOnBreak
-                          ? 'On Break'
-                          : todayAttendance.checkOut
-                          ? 'Checked Out'
-                          : 'Active'}
-                      </span>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      {todayAttendance.breaks.length} break{todayAttendance.breaks.length !== 1 ? 's' : ''} taken
                     </div>
                   </div>
                 </div>
+
+                {/* If Currently On Break: Prominent Active Banner */}
+                {todayAttendance.isOnBreak && (
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
+                        <Coffee className="w-5 h-5 animate-bounce" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                            Currently on Break ({todayAttendance.currentBreakType})
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300 mt-0.5">
+                          Break started at <strong className="text-white font-mono">{todayAttendance.currentBreakStartTime}</strong> on{' '}
+                          <span className="text-amber-300 font-medium">{todayAttendance.date}</span>. Biometric pause active.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={endBreak}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 flex items-center gap-1.5 whitespace-nowrap transition-all"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span>End Break & Resume Work</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Right Action Buttons */}
-              <div className="flex flex-col gap-3 min-w-[220px]">
+              <div className="flex flex-col gap-3 min-w-[240px] border-t lg:border-t-0 lg:border-l border-slate-800 pt-6 lg:pt-0 lg:pl-8">
                 {!todayAttendance.checkIn ? (
                   <button
                     onClick={checkIn}
@@ -174,41 +253,70 @@ export default function AttendancePage() {
                 ) : !todayAttendance.checkOut ? (
                   <>
                     {!todayAttendance.isOnBreak ? (
-                      <button
-                        onClick={startBreak}
-                        className="w-full py-3 px-5 rounded-2xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
-                      >
-                        <Coffee className="w-4 h-4" />
-                        <span>Start Break</span>
-                      </button>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-semibold text-slate-400">Select Break Type:</label>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
+                          {['Lunch Break', 'Tea Break', 'Short Break'].map((bType) => (
+                            <button
+                              key={bType}
+                              onClick={() => setSelectedBreakType(bType)}
+                              className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                                selectedBreakType === bType
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                                  : 'text-slate-400 hover:text-slate-200'
+                              }`}
+                            >
+                              {bType.split(' ')[0]}
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          onClick={() => startBreak(selectedBreakType)}
+                          className="w-full py-3 px-5 rounded-2xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
+                        >
+                          <Coffee className="w-4 h-4" />
+                          <span>Start {selectedBreakType}</span>
+                        </button>
+                      </div>
                     ) : (
                       <button
                         onClick={endBreak}
-                        className="w-full py-3 px-5 rounded-2xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
+                        className="w-full py-3.5 px-5 rounded-2xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
                       >
                         <CheckCircle className="w-4 h-4" />
-                        <span>End Break</span>
+                        <span>End Break (Back to Work)</span>
                       </button>
                     )}
 
                     <button
                       onClick={checkOut}
-                      className="w-full py-3 px-5 rounded-2xl text-sm font-bold bg-rose-600/90 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
+                      className="w-full py-3 px-5 rounded-2xl text-xs font-bold bg-rose-600/90 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all mt-1"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Punch Out (Check Out)</span>
                     </button>
                   </>
                 ) : (
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center">
-                    <span className="text-xs font-bold text-slate-300">
-                      Day Completed at {todayAttendance.checkOut}
-                    </span>
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-2">
+                    <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+                      <Check className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">
+                        Shift Completed
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {todayAttendance.checkOutDate || todayAttendance.date} at {todayAttendance.checkOut}
+                      </span>
+                    </div>
                     <button
                       onClick={checkIn}
-                      className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold block mx-auto"
+                      className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold block mx-auto underline decoration-dotted"
                     >
-                      Reset / Re-Punch In
+                      Re-Punch / Open New Shift
                     </button>
                   </div>
                 )}
@@ -216,53 +324,278 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          {/* Quick Attendance History Table */}
-          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-            <h3 className="text-sm font-bold text-white">Recent Attendance Logs (Rahul Bajediyal)</h3>
+          {/* DEDICATED TODAY'S BREAK & BIOMETRIC AUDIT LEDGER */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Coffee className="w-4 h-4 text-amber-400" />
+                  Today's Break Ledger & Punch Audit Trail
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Complete breakdown of when breaks started, ended, their duration, and shift punch timestamps.
+                </p>
+              </div>
+
+              {/* View Switcher: Break Table vs Biometric Event Timeline */}
+              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                <button
+                  onClick={() => setViewMode('breaks')}
+                  className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                    viewMode === 'breaks'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Break Timestamps ({todayAttendance.breaks.length})
+                </button>
+                <button
+                  onClick={() => setViewMode('events')}
+                  className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                    viewMode === 'events'
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  All Biometric Events ({todayAttendance.events?.length || 0})
+                </button>
+              </div>
+            </div>
+
+            {/* TAB 1: BREAK TIMESTAMPS TABLE */}
+            {viewMode === 'breaks' && (
+              <div className="space-y-3">
+                {todayAttendance.breaks && todayAttendance.breaks.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/40">
+                          <th className="py-3 px-4 font-semibold">Break Type</th>
+                          <th className="py-3 px-4 font-semibold">Date</th>
+                          <th className="py-3 px-4 font-semibold">Break Start Time</th>
+                          <th className="py-3 px-4 font-semibold">Break End Time</th>
+                          <th className="py-3 px-4 font-semibold">Duration</th>
+                          <th className="py-3 px-4 font-semibold text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-mono">
+                        {todayAttendance.breaks.map((b, idx) => (
+                          <tr key={b.id || idx} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3 px-4 font-sans font-bold text-white flex items-center gap-2">
+                              {b.type.toLowerCase().includes('lunch') ? (
+                                <span className="p-1.5 rounded-lg bg-orange-500/20 text-orange-400">
+                                  <Utensils className="w-3.5 h-3.5" />
+                                </span>
+                              ) : (
+                                <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                                  <Coffee className="w-3.5 h-3.5" />
+                                </span>
+                              )}
+                              <span>{b.type}</span>
+                            </td>
+                            <td className="py-3 px-4 text-slate-300">{b.startDate || todayAttendance.date}</td>
+                            <td className="py-3 px-4 text-amber-300 font-bold">{b.startTime}</td>
+                            <td className="py-3 px-4">
+                              {b.endTime ? (
+                                <span className="text-emerald-300 font-bold">{b.endTime}</span>
+                              ) : (
+                                <span className="text-amber-400 animate-pulse font-sans font-bold flex items-center gap-1">
+                                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                                  Active / Running
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 font-sans text-slate-300">
+                              {b.durationFormatted || `${b.durationMinutes} mins`}
+                            </td>
+                            <td className="py-3 px-4 font-sans text-right">
+                              {b.endTime ? (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                  Completed
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse">
+                                  In-Progress
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-8 rounded-2xl bg-slate-950/60 border border-slate-800 text-center space-y-2">
+                    <Coffee className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-xs font-semibold text-slate-400">No breaks taken yet today.</p>
+                    <p className="text-[11px] text-slate-500">
+                      When you start a lunch or tea break, exact start and end timestamps with dates will be recorded here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: CHRONOLOGICAL BIOMETRIC EVENTS TIMELINE */}
+            {viewMode === 'events' && (
+              <div className="space-y-3">
+                <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+                  {todayAttendance.events?.map((ev, idx) => {
+                    const isPunchIn = ev.type === 'PUNCH_IN';
+                    const isPunchOut = ev.type === 'PUNCH_OUT';
+                    const isBreakStart = ev.type === 'BREAK_START';
+                    const isBreakEnd = ev.type === 'BREAK_END';
+
+                    let dotColor = 'bg-slate-500';
+                    let badgeBg = 'bg-slate-800 text-slate-300';
+                    if (isPunchIn) {
+                      dotColor = 'bg-emerald-400';
+                      badgeBg = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                    } else if (isPunchOut) {
+                      dotColor = 'bg-rose-400';
+                      badgeBg = 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
+                    } else if (isBreakStart) {
+                      dotColor = 'bg-amber-400';
+                      badgeBg = 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                    } else if (isBreakEnd) {
+                      dotColor = 'bg-indigo-400';
+                      badgeBg = 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30';
+                    }
+
+                    return (
+                      <div key={ev.id || idx} className="relative flex items-start gap-4">
+                        <span
+                          className={`absolute -left-6 top-1.5 w-3 h-3 rounded-full border-2 border-slate-900 ${dotColor}`}
+                        />
+                        <div className="flex-1 p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badgeBg}`}>
+                                {ev.type.replace('_', ' ')}
+                              </span>
+                              <span className="text-xs font-bold text-white">{ev.label}</span>
+                            </div>
+                            {ev.note && <p className="text-[11px] text-slate-400">{ev.note}</p>}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs font-mono">
+                            <span className="text-slate-400 flex items-center gap-1 font-sans">
+                              <Calendar className="w-3 h-3 text-slate-500" />
+                              {ev.date}
+                            </span>
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-white font-bold">
+                              {ev.time}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* QUICK RECENT ATTENDANCE LOGS WITH DETAILED BREAKS */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white">Recent Attendance Logs (Rahul Bajediyal)</h3>
+                <p className="text-xs text-slate-400">Previous shift logs with punch in, punch out, and break breakdown</p>
+              </div>
+              <span className="text-xs text-indigo-400 font-semibold">Last 3 Days</span>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400">
-                    <th className="py-2.5 font-semibold">Date</th>
-                    <th className="py-2.5 font-semibold">Check In</th>
-                    <th className="py-2.5 font-semibold">Check Out</th>
-                    <th className="py-2.5 font-semibold">Working Hours</th>
-                    <th className="py-2.5 font-semibold">Break</th>
-                    <th className="py-2.5 font-semibold">Status</th>
+                  <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/40">
+                    <th className="py-2.5 px-3 font-semibold">Date</th>
+                    <th className="py-2.5 px-3 font-semibold">Check In (Date & Time)</th>
+                    <th className="py-2.5 px-3 font-semibold">Check Out (Date & Time)</th>
+                    <th className="py-2.5 px-3 font-semibold">Break Breakdown (Start - End)</th>
+                    <th className="py-2.5 px-3 font-semibold">Working Hours</th>
+                    <th className="py-2.5 px-3 font-semibold">Total Break</th>
+                    <th className="py-2.5 px-3 font-semibold">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  <tr className="hover:bg-slate-800/40">
-                    <td className="py-3 font-bold text-white">08 Oct 2026</td>
-                    <td className="py-3 font-mono text-indigo-300">{todayAttendance.checkIn || '09:12 AM'}</td>
-                    <td className="py-3 font-mono text-slate-400">{todayAttendance.checkOut || 'Active'}</td>
-                    <td className="py-3 font-mono text-white font-bold">{todayAttendance.workingTime}</td>
-                    <td className="py-3 text-slate-400">{todayAttendance.breakTime}</td>
-                    <td className="py-3">
+                <tbody className="divide-y divide-slate-800/60 font-mono">
+                  {/* Today */}
+                  <tr className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-3 font-sans font-bold text-white flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      {todayAttendance.date} (Today)
+                    </td>
+                    <td className="py-3 px-3 text-indigo-300 font-bold">
+                      {todayAttendance.checkIn ? `${todayAttendance.checkInDate || todayAttendance.date} • ${todayAttendance.checkIn}` : '--:--'}
+                    </td>
+                    <td className="py-3 px-3 text-slate-300">
+                      {todayAttendance.checkOut
+                        ? `${todayAttendance.checkOutDate || todayAttendance.date} • ${todayAttendance.checkOut}`
+                        : 'Active / In-Shift'}
+                    </td>
+                    <td className="py-3 px-3 font-sans">
+                      <div className="flex flex-wrap gap-1.5">
+                        {todayAttendance.breaks.map((b, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-mono"
+                          >
+                            {b.type.split(' ')[0]}: {b.startTime} - {b.endTime || 'Running'} ({b.durationFormatted})
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-white font-bold">{todayAttendance.workingTime}</td>
+                    <td className="py-3 px-3 text-amber-300">{todayAttendance.breakTime}</td>
+                    <td className="py-3 px-3 font-sans">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Present
+                      </span>
+                    </td>
+                  </tr>
+
+                  {/* 18 Oct */}
+                  <tr className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-3 font-sans font-bold text-white">18 Oct 2026</td>
+                    <td className="py-3 px-3 text-slate-300">18 Oct 2026 • 09:05 AM</td>
+                    <td className="py-3 px-3 text-slate-300">18 Oct 2026 • 06:30 PM</td>
+                    <td className="py-3 px-3 font-sans">
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-mono">
+                          Lunch: 01:00 PM - 01:45 PM (45m)
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-mono">
+                          Tea: 04:30 PM - 04:45 PM (15m)
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-white font-bold">08h 25m</td>
+                    <td className="py-3 px-3 text-slate-400">01h 00m</td>
+                    <td className="py-3 px-3 font-sans">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
                         Present
                       </span>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-800/40">
-                    <td className="py-3 font-bold text-white">07 Oct 2026</td>
-                    <td className="py-3 font-mono text-slate-300">09:05 AM</td>
-                    <td className="py-3 font-mono text-slate-300">06:30 PM</td>
-                    <td className="py-3 font-mono text-white font-bold">08h 35m</td>
-                    <td className="py-3 text-slate-400">00h 50m</td>
-                    <td className="py-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
-                        Present
-                      </span>
+
+                  {/* 17 Oct */}
+                  <tr className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-3 font-sans font-bold text-white">17 Oct 2026</td>
+                    <td className="py-3 px-3 text-slate-300">17 Oct 2026 • 09:15 AM</td>
+                    <td className="py-3 px-3 text-slate-300">17 Oct 2026 • 06:10 PM</td>
+                    <td className="py-3 px-3 font-sans">
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-mono">
+                          Lunch: 01:15 PM - 01:55 PM (40m)
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-mono">
+                          Tea: 04:45 PM - 04:55 PM (10m)
+                        </span>
+                      </div>
                     </td>
-                  </tr>
-                  <tr className="hover:bg-slate-800/40">
-                    <td className="py-3 font-bold text-white">06 Oct 2026</td>
-                    <td className="py-3 font-mono text-slate-300">09:15 AM</td>
-                    <td className="py-3 font-mono text-slate-300">06:10 PM</td>
-                    <td className="py-3 font-mono text-white font-bold">08h 05m</td>
-                    <td className="py-3 text-slate-400">00h 50m</td>
-                    <td className="py-3">
+                    <td className="py-3 px-3 text-white font-bold">08h 05m</td>
+                    <td className="py-3 px-3 text-slate-400">00h 50m</td>
+                    <td className="py-3 px-3 font-sans">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
                         Present
                       </span>
@@ -277,105 +610,223 @@ export default function AttendancePage() {
 
       {/* FULL ATTENDANCE LEDGER */}
       {activeTab === 'history' && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div>
-              <h3 className="text-sm font-bold text-white">Organization Attendance Register</h3>
-              <p className="text-xs text-slate-400">Recorded punches across all departments</p>
+              <h3 className="text-base font-bold text-white">Organization Attendance Register</h3>
+              <p className="text-xs text-slate-400">
+                Detailed biometric punch in/out timestamps and individual break logs for all staff
+              </p>
             </div>
-            <button
-              onClick={() => showToast('Attendance register exported as CSV', 'success')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Search employee / dept / date..."
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                className="px-3 py-1.5 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              />
+              <button
+                onClick={() => showToast('Attendance register exported as CSV with Break telemetry', 'success')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 whitespace-nowrap"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400">
+                <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/40">
                   <th className="py-3 px-4 font-semibold">Employee</th>
                   <th className="py-3 px-4 font-semibold">Department</th>
                   <th className="py-3 px-4 font-semibold">Date</th>
-                  <th className="py-3 px-4 font-semibold">Punch In</th>
-                  <th className="py-3 px-4 font-semibold">Punch Out</th>
+                  <th className="py-3 px-4 font-semibold">Punch In Time</th>
+                  <th className="py-3 px-4 font-semibold">Punch Out Time</th>
+                  <th className="py-3 px-4 font-semibold">Breaks Log (Start - End)</th>
                   <th className="py-3 px-4 font-semibold">Working Hours</th>
-                  <th className="py-3 px-4 font-semibold">Break</th>
                   <th className="py-3 px-4 font-semibold">Overtime</th>
                   <th className="py-3 px-4 font-semibold text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {attendanceRecords.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-800/40">
-                    <td className="py-3 px-4 font-bold text-white">{r.employeeName}</td>
-                    <td className="py-3 px-4 text-slate-300">{r.department}</td>
-                    <td className="py-3 px-4 text-slate-400">{r.date}</td>
-                    <td className="py-3 px-4 font-mono text-indigo-300">{r.checkIn || '-'}</td>
-                    <td className="py-3 px-4 font-mono text-slate-400">{r.checkOut || '-'}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-white">
-                      {Math.floor(r.workingMinutes / 60)}h {r.workingMinutes % 60}m
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">{r.breakMinutes}m</td>
-                    <td className="py-3 px-4 font-mono text-emerald-400">{r.overtimeMinutes}m</td>
-                    <td className="py-3 px-4 text-right">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          r.status === 'Present'
-                            ? 'bg-emerald-500/20 text-emerald-400'
-                            : r.status === 'Late'
-                            ? 'bg-amber-500/20 text-amber-400'
-                            : r.status === 'On Leave'
-                            ? 'bg-cyan-500/20 text-cyan-400'
-                            : 'bg-rose-500/20 text-rose-400'
-                        }`}
+              <tbody className="divide-y divide-slate-800/60 font-mono">
+                {filteredRecords.map((r) => {
+                  const isExpanded = expandedRecordId === r.id;
+                  return (
+                    <React.Fragment key={r.id}>
+                      <tr
+                        onClick={() => setExpandedRecordId(isExpanded ? null : r.id)}
+                        className="hover:bg-slate-800/40 transition-colors cursor-pointer"
                       >
-                        {r.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                        <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-2">
+                          <span>{r.employeeName}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">({r.empId})</span>
+                        </td>
+                        <td className="py-3.5 px-4 font-sans text-slate-300">{r.department}</td>
+                        <td className="py-3.5 px-4 text-slate-400">{r.date}</td>
+                        <td className="py-3.5 px-4 font-bold text-indigo-300">
+                          {r.checkIn ? `${r.checkIn}` : '-'}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-400">
+                          {r.checkOut ? `${r.checkOut}` : '-'}
+                        </td>
+                        <td className="py-3.5 px-4 font-sans">
+                          {r.breaksList && r.breaksList.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {r.breaksList.map((bk, bIdx) => (
+                                <span
+                                  key={bIdx}
+                                  className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] font-mono text-amber-300"
+                                >
+                                  {bk.type.split(' ')[0]}: {bk.startTime} - {bk.endTime || 'Running'} ({bk.durationFormatted})
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-500 text-[11px] font-sans">No breaks ({r.breakMinutes}m)</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-white font-mono">
+                          {Math.floor(r.workingMinutes / 60)}h {r.workingMinutes % 60}m
+                        </td>
+                        <td className="py-3.5 px-4 text-emerald-400">{r.overtimeMinutes}m</td>
+                        <td className="py-3.5 px-4 font-sans text-right">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              r.status === 'Present'
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                : r.status === 'Late'
+                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                : r.status === 'On Leave'
+                                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            }`}
+                          >
+                            {r.status}
+                          </span>
+                        </td>
+                      </tr>
+
+                      {/* Expandable detailed drawer row */}
+                      {isExpanded && r.breaksList && r.breaksList.length > 0 && (
+                        <tr className="bg-slate-950/70 border-b border-slate-800/80">
+                          <td colSpan={9} className="p-4 pl-12 font-sans">
+                            <div className="space-y-2">
+                              <h5 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                                <Info className="w-3.5 h-3.5 text-indigo-400" />
+                                Detailed Break Timestamps for {r.employeeName} ({r.date}):
+                              </h5>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {r.breaksList.map((item, i) => (
+                                  <div
+                                    key={i}
+                                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs flex items-center justify-between"
+                                  >
+                                    <div>
+                                      <span className="font-bold text-white block">{item.type}</span>
+                                      <span className="text-[11px] text-slate-400 font-mono">
+                                        {item.startDate || r.date} • {item.startTime} → {item.endTime || 'Active'}
+                                      </span>
+                                    </div>
+                                    <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+                                      {item.durationFormatted}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* HR VIEW: LATE ARRIVALS & OVERTIME */}
+      {/* HR VIEW: LATE ARRIVALS, BREAK AUDIT, & OVERTIME */}
       {activeTab === 'hr-view' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Late Arrivals Box */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-400" />
                   Late Arrivals Log (Today)
                 </h3>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300">
-                  3 Flagged
+                  {lateArrivals.length} Flagged
                 </span>
               </div>
               <div className="space-y-3">
                 {lateArrivals.map((l, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
                     <div className="flex justify-between font-bold text-white">
                       <span>{l.name} ({l.empId})</span>
-                      <span className="text-amber-400">{l.checkIn}</span>
+                      <span className="text-amber-400 font-mono">{l.checkIn}</span>
                     </div>
                     <div className="flex justify-between text-slate-400 text-[11px]">
-                      <span>Dept: {l.dept} • Reason: {l.reason}</span>
-                      <span className="text-rose-400 font-medium">+{l.delay}</span>
+                      <span>{l.date} • Dept: {l.dept}</span>
+                      <span className="text-rose-400 font-medium">+{l.delay} Delay</span>
                     </div>
+                    <div className="text-[10px] text-slate-500 italic">Reason: "{l.reason}"</div>
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* Break Policy & Compliance Box */}
+            <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  Break Policy Compliance
+                </h3>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
+                  100% Compliant
+                </span>
+              </div>
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
+                  <div className="flex justify-between font-bold text-white">
+                    <span>Lunch Break Window</span>
+                    <span className="text-emerald-400 font-mono">Max 45m</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Permitted between 12:30 PM - 02:30 PM. Rahul Bajediyal took 40m (01:15 PM - 01:55 PM).
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
+                  <div className="flex justify-between font-bold text-white">
+                    <span>Tea / Rest Break Window</span>
+                    <span className="text-emerald-400 font-mono">Max 20m</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Permitted between 04:00 PM - 05:30 PM. Rahul Bajediyal took 20m (04:30 PM - 04:50 PM).
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
+                  <div className="flex justify-between font-bold text-white">
+                    <span>Unannounced Absence</span>
+                    <span className="text-rose-400 font-mono">1 Alert</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Varun Kapoor (EMP010) has not checked in as of 10:30 AM today.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Overtime Workers Box */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-emerald-400" />
@@ -387,7 +838,7 @@ export default function AttendancePage() {
               </div>
               <div className="space-y-3">
                 {overtimeWorkers.map((o, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
                     <div className="flex justify-between font-bold text-white">
                       <span>{o.name} ({o.empId})</span>
                       <span className="text-emerald-400 font-mono">+{o.overtime}</span>

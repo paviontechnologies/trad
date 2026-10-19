@@ -8,6 +8,8 @@ import {
   LeaveRequest,
   LeaveBalance,
   AttendanceRecord,
+  BreakLog,
+  PunchEvent,
   SecurityAlert,
   AuditLog,
   Trade,
@@ -44,17 +46,24 @@ interface AuthContextType {
 
   attendanceRecords: AttendanceRecord[];
   todayAttendance: {
+    date: string;
     checkIn: string | null;
+    checkInDate: string;
     checkOut: string | null;
+    checkOutDate: string | null;
     workingTime: string;
     breakTime: string;
     workingMinutes: number;
     breakMinutes: number;
     isCheckedIn: boolean;
     isOnBreak: boolean;
+    currentBreakStartTime: string | null;
+    currentBreakType: string;
+    breaks: BreakLog[];
+    events: PunchEvent[];
   };
   checkIn: () => void;
-  startBreak: () => void;
+  startBreak: (type?: string) => void;
   endBreak: () => void;
   checkOut: () => void;
 
@@ -100,14 +109,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Live Attendance for Employee (Rahul Bajediyal)
   const [todayAttendance, setTodayAttendance] = useState({
+    date: '19 Oct 2026',
     checkIn: '09:12 AM',
+    checkInDate: '19 Oct 2026',
     checkOut: null as string | null,
+    checkOutDate: null as string | null,
     workingTime: '06h 42m',
-    breakTime: '00h 45m',
+    breakTime: '01h 00m',
     workingMinutes: 402,
-    breakMinutes: 45,
+    breakMinutes: 60,
     isCheckedIn: true,
     isOnBreak: false,
+    currentBreakStartTime: null as string | null,
+    currentBreakType: 'Lunch Break',
+    breaks: [
+      {
+        id: 'brk-1',
+        type: 'Lunch Break',
+        startTime: '01:15 PM',
+        startDate: '19 Oct 2026',
+        endTime: '01:55 PM',
+        durationMinutes: 40,
+        durationFormatted: '40 mins',
+      },
+      {
+        id: 'brk-2',
+        type: 'Tea / Coffee Break',
+        startTime: '04:30 PM',
+        startDate: '19 Oct 2026',
+        endTime: '04:50 PM',
+        durationMinutes: 20,
+        durationFormatted: '20 mins',
+      },
+    ] as BreakLog[],
+    events: [
+      {
+        id: 'ev-1',
+        type: 'PUNCH_IN',
+        label: 'Shift Punch In',
+        time: '09:12 AM',
+        date: '19 Oct 2026',
+        note: 'Biometric Station • On-Time Entry',
+      },
+      {
+        id: 'ev-2',
+        type: 'BREAK_START',
+        label: 'Started Lunch Break',
+        time: '01:15 PM',
+        date: '19 Oct 2026',
+        note: 'Cafeteria Floor 2',
+      },
+      {
+        id: 'ev-3',
+        type: 'BREAK_END',
+        label: 'Completed Lunch Break',
+        time: '01:55 PM',
+        date: '19 Oct 2026',
+        note: 'Duration: 40 mins',
+      },
+      {
+        id: 'ev-4',
+        type: 'BREAK_START',
+        label: 'Started Tea Break',
+        time: '04:30 PM',
+        date: '19 Oct 2026',
+        note: 'Pantry Zone',
+      },
+      {
+        id: 'ev-5',
+        type: 'BREAK_END',
+        label: 'Completed Tea Break',
+        time: '04:50 PM',
+        date: '19 Oct 2026',
+        note: 'Duration: 20 mins',
+      },
+    ] as PunchEvent[],
   });
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -296,46 +372,140 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Punch actions
   const checkIn = () => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const newEvent: PunchEvent = {
+      id: `ev-${Date.now()}`,
+      type: 'PUNCH_IN',
+      label: 'Shift Punch In',
+      time,
+      date: dateStr,
+      note: 'Biometric Station • Checked In On-Time',
+    };
+
     setTodayAttendance((prev) => ({
       ...prev,
       checkIn: time,
+      checkInDate: dateStr,
       checkOut: null,
+      checkOutDate: null,
       isCheckedIn: true,
       isOnBreak: false,
+      currentBreakStartTime: null,
+      events: [newEvent, ...prev.events],
     }));
-    addAuditLog('PUNCH_IN', 'Attendance', `Employee checked in at ${time}`);
+    addAuditLog('PUNCH_IN', 'Attendance', `Employee punched in at ${time} on ${dateStr}`);
     showToast(`Checked in successfully at ${time}! Have a productive day.`, 'success');
   };
 
-  const startBreak = () => {
+  const startBreak = (type: string = 'Tea / Short Break') => {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const breakId = `brk-${Date.now()}`;
+
+    const newBreak: BreakLog = {
+      id: breakId,
+      type,
+      startTime: time,
+      startDate: dateStr,
+      endTime: null,
+      durationMinutes: 0,
+      durationFormatted: 'In Progress (Active)',
+    };
+
+    const newEvent: PunchEvent = {
+      id: `ev-${Date.now()}`,
+      type: 'BREAK_START',
+      label: `Started ${type}`,
+      time,
+      date: dateStr,
+      note: 'Live break timer active',
+    };
+
     setTodayAttendance((prev) => ({
       ...prev,
       isOnBreak: true,
+      currentBreakStartTime: time,
+      currentBreakType: type,
+      breaks: [newBreak, ...prev.breaks],
+      events: [newEvent, ...prev.events],
     }));
-    addAuditLog('BREAK_START', 'Attendance', 'Employee started break');
-    showToast(`Break started. Timer is now running.`, 'info');
+
+    addAuditLog('BREAK_START', 'Attendance', `Started ${type} at ${time}`);
+    showToast(`${type} started at ${time}. Live timer running!`, 'info');
   };
 
   const endBreak = () => {
-    setTodayAttendance((prev) => ({
-      ...prev,
-      isOnBreak: false,
-      breakMinutes: prev.breakMinutes + 15,
-      breakTime: '01h 00m',
-    }));
-    addAuditLog('BREAK_END', 'Attendance', 'Employee returned from break');
-    showToast(`Break ended. Welcome back to work!`, 'success');
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    setTodayAttendance((prev) => {
+      const addedMinutes = 15;
+      const updatedBreaks = prev.breaks.map((b, idx) => {
+        if (idx === 0 && !b.endTime) {
+          return {
+            ...b,
+            endTime: time,
+            durationMinutes: addedMinutes,
+            durationFormatted: `${addedMinutes} mins`,
+          };
+        }
+        return b;
+      });
+
+      const newEvent: PunchEvent = {
+        id: `ev-${Date.now()}`,
+        type: 'BREAK_END',
+        label: `Ended ${prev.currentBreakType || 'Break'}`,
+        time,
+        date: dateStr,
+        note: `Duration: ${addedMinutes} mins (Returned to work)`,
+      };
+
+      const newTotalMinutes = prev.breakMinutes + addedMinutes;
+      const hrs = Math.floor(newTotalMinutes / 60);
+      const mins = newTotalMinutes % 60;
+      const formattedTotal = `${hrs.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m`;
+
+      return {
+        ...prev,
+        isOnBreak: false,
+        currentBreakStartTime: null,
+        breakMinutes: newTotalMinutes,
+        breakTime: formattedTotal,
+        breaks: updatedBreaks,
+        events: [newEvent, ...prev.events],
+      };
+    });
+
+    addAuditLog('BREAK_END', 'Attendance', `Returned from break at ${time}`);
+    showToast(`Break ended at ${time}. Welcome back to work!`, 'success');
   };
 
   const checkOut = () => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const newEvent: PunchEvent = {
+      id: `ev-${Date.now()}`,
+      type: 'PUNCH_OUT',
+      label: 'Shift Punch Out',
+      time,
+      date: dateStr,
+      note: 'Shift completed • Daily records finalized',
+    };
+
     setTodayAttendance((prev) => ({
       ...prev,
       checkOut: time,
+      checkOutDate: dateStr,
       isCheckedIn: false,
       isOnBreak: false,
+      currentBreakStartTime: null,
+      events: [newEvent, ...prev.events],
     }));
-    addAuditLog('PUNCH_OUT', 'Attendance', `Employee checked out at ${time}`);
+
+    addAuditLog('PUNCH_OUT', 'Attendance', `Employee checked out at ${time} on ${dateStr}`);
     showToast(`Checked out successfully at ${time}. Great work today!`, 'success');
   };
 

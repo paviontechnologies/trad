@@ -41,6 +41,25 @@ export interface Employee {
   avatarUrl?: string;
 }
 
+export interface BreakLog {
+  id: string;
+  type: string;
+  startTime: string;
+  startDate?: string;
+  endTime?: string | null;
+  durationMinutes: number;
+  durationFormatted: string;
+}
+
+export interface PunchEvent {
+  id: string;
+  type: 'PUNCH_IN' | 'PUNCH_OUT' | 'BREAK_START' | 'BREAK_END';
+  label: string;
+  time: string;
+  date: string;
+  note?: string;
+}
+
 export interface AttendanceRecord {
   id: string;
   employeeId: string;
@@ -54,6 +73,7 @@ export interface AttendanceRecord {
   breakMinutes: number;
   overtimeMinutes: number;
   status: 'Present' | 'Absent' | 'Half Day' | 'On Leave' | 'Late';
+  breaksList?: BreakLog[];
 }
 
 export interface LeaveRequest {
