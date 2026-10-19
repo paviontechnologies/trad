@@ -846,16 +846,21 @@ export default function AttendancePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/40">
-                  <th className="py-3 px-4 font-semibold">Employee</th>
-                  <th className="py-3 px-4 font-semibold">Department</th>
-                  <th className="py-3 px-4 font-semibold">Date</th>
-                  <th className="py-3 px-4 font-semibold">Punch In Time</th>
-                  <th className="py-3 px-4 font-semibold">Punch Out Time</th>
-                  <th className="py-3 px-4 font-semibold">Breaks Log (Start - End)</th>
-                  <th className="py-3 px-4 font-semibold">Working Hours</th>
-                  <th className="py-3 px-4 font-semibold">Overtime</th>
-                  <th className="py-3 px-4 font-semibold text-right">Status</th>
+                <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/60">
+                  <th className="py-3.5 px-4 font-semibold whitespace-nowrap">Employee</th>
+                  <th className="py-3.5 px-4 font-semibold whitespace-nowrap">Department</th>
+                  <th className="py-3.5 px-4 font-semibold whitespace-nowrap">Date</th>
+                  <th className="py-3.5 px-4 font-semibold whitespace-nowrap">Punch In</th>
+                  <th className="py-3.5 px-4 font-semibold whitespace-nowrap">Punch Out</th>
+                  <th className="py-3.5 px-4 font-semibold min-w-[380px]">
+                    <div className="flex items-center gap-1.5">
+                      <Coffee className="w-4 h-4 text-amber-400" />
+                      <span className="text-white font-bold">Breaks Log (Start → End • Duration)</span>
+                    </div>
+                  </th>
+                  <th className="py-3.5 px-4 font-semibold whitespace-nowrap">Working Hours</th>
+                  <th className="py-3.5 px-4 font-semibold whitespace-nowrap">Overtime</th>
+                  <th className="py-3.5 px-4 font-semibold text-right whitespace-nowrap">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -865,45 +870,163 @@ export default function AttendancePage() {
                     <React.Fragment key={r.id}>
                       <tr
                         onClick={() => setExpandedRecordId(isExpanded ? null : r.id)}
-                        className="hover:bg-slate-800/40 transition-colors cursor-pointer"
+                        className={`hover:bg-slate-800/40 transition-colors cursor-pointer ${
+                          isExpanded ? 'bg-slate-800/30' : ''
+                        }`}
                       >
-                        <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-2">
-                          <span>{r.employeeName}</span>
-                          <span className="text-[10px] text-slate-400 font-mono">({r.empId})</span>
+                        {/* 1. Employee Name & ID */}
+                        <td className="py-4 px-4 font-sans align-top">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-white text-xs leading-snug">{r.employeeName}</span>
+                            <span className="text-[10px] text-indigo-400 font-mono font-bold bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 w-fit mt-1">
+                              {r.empId}
+                            </span>
+                          </div>
                         </td>
-                        <td className="py-3.5 px-4 font-sans text-slate-300">{r.department}</td>
-                        <td className="py-3.5 px-4 text-slate-400">{r.date}</td>
-                        <td className="py-3.5 px-4 font-bold text-indigo-300">
-                          {r.checkIn ? `${r.checkIn}` : '-'}
+
+                        {/* 2. Department */}
+                        <td className="py-4 px-4 font-sans text-slate-300 text-xs align-top">
+                          <span className="font-medium text-slate-300">{r.department}</span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-400">
-                          {r.checkOut ? `${r.checkOut}` : '-'}
+
+                        {/* 3. Date */}
+                        <td className="py-4 px-4 text-slate-300 text-xs font-mono align-top whitespace-nowrap">
+                          {r.date}
                         </td>
-                        <td className="py-3.5 px-4 font-sans">
-                          {r.breaksList && r.breaksList.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {r.breaksList.map((bk, bIdx) => (
-                                <span
-                                  key={bIdx}
-                                  className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] font-mono text-amber-300"
-                                >
-                                  {bk.type.split(' ')[0]}: {bk.startTime} - {bk.endTime || 'Running'} ({bk.durationFormatted})
-                                </span>
-                              ))}
-                            </div>
+
+                        {/* 4. Punch In */}
+                        <td className="py-4 px-4 align-top">
+                          {r.checkIn ? (
+                            <span className="font-mono font-bold text-xs text-indigo-300 bg-indigo-500/15 px-2 py-1 rounded-lg border border-indigo-500/30 whitespace-nowrap inline-block">
+                              {r.checkIn}
+                            </span>
                           ) : (
-                            <span className="text-slate-500 text-[11px] font-sans">No breaks ({r.breakMinutes}m)</span>
+                            <span className="text-slate-500">-</span>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 font-bold text-white font-mono">
-                          {Math.floor(r.workingMinutes / 60)}h {r.workingMinutes % 60}m
+
+                        {/* 5. Punch Out */}
+                        <td className="py-4 px-4 align-top">
+                          {r.checkOut ? (
+                            <span className="font-mono font-bold text-xs text-slate-300 bg-slate-800 px-2 py-1 rounded-lg border border-slate-700 whitespace-nowrap inline-block">
+                              {r.checkOut}
+                            </span>
+                          ) : (
+                            <span className="font-mono text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/25 font-bold flex items-center gap-1.5 w-fit whitespace-nowrap">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              Active On Duty
+                            </span>
+                          )}
                         </td>
-                        <td className="py-3.5 px-4 text-emerald-400">{r.overtimeMinutes}m</td>
-                        <td className="py-3.5 px-4 font-sans text-right">
+
+                        {/* 6. High-Contrast, Structured Breaks Log Column */}
+                        <td className="py-4 px-4 font-sans align-top min-w-[380px]">
+                          {r.breaksList && r.breaksList.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {/* Summary Line */}
+                              <div className="flex items-center justify-between text-[11px] pb-1 border-b border-slate-800">
+                                <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                                  <Coffee className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>{r.breaksList.length} {r.breaksList.length === 1 ? 'Break' : 'Breaks'} Taken</span>
+                                </span>
+                                <span className="font-mono font-bold text-amber-300 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-[10px]">
+                                  Total: {r.breakMinutes} mins
+                                </span>
+                              </div>
+
+                              {/* Individual Structured Break Cards */}
+                              <div className="space-y-1.5">
+                                {r.breaksList.map((bk, bIdx) => {
+                                  const isLunch = bk.type.toLowerCase().includes('lunch');
+                                  const isCoffee =
+                                    bk.type.toLowerCase().includes('tea') ||
+                                    bk.type.toLowerCase().includes('coffee');
+
+                                  return (
+                                    <div
+                                      key={bIdx}
+                                      className="p-2 rounded-xl bg-slate-950/90 border border-slate-700/90 hover:border-indigo-500/40 flex items-center justify-between gap-3 text-xs shadow-md transition-all"
+                                    >
+                                      {/* Left: Break Type with Icon & Color Badge */}
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        {isLunch ? (
+                                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                                            <Utensils className="w-3 h-3 text-amber-400" />
+                                            <span>Lunch</span>
+                                          </span>
+                                        ) : isCoffee ? (
+                                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1">
+                                            <Coffee className="w-3 h-3 text-sky-400" />
+                                            <span>{bk.type.split(' ')[0]}</span>
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                                            <Clock className="w-3 h-3 text-purple-400" />
+                                            <span>{bk.type.split(' ')[0]}</span>
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Center: High-Contrast Start -> End Timestamps */}
+                                      <div className="flex items-center gap-2 font-mono text-xs">
+                                        <span className="font-black text-white bg-slate-900 px-2 py-0.5 rounded-md border border-slate-700/80 shadow-inner">
+                                          {bk.startTime}
+                                        </span>
+                                        <span className="text-indigo-400 font-sans font-bold text-sm">→</span>
+                                        {bk.endTime ? (
+                                          <span className="font-black text-white bg-slate-900 px-2 py-0.5 rounded-md border border-slate-700/80 shadow-inner">
+                                            {bk.endTime}
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/25 text-amber-300 border border-amber-500/50 animate-pulse flex items-center gap-1 font-sans">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                                            Running
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Right: Duration Pill */}
+                                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[11px] font-mono font-bold shrink-0">
+                                        {bk.durationFormatted || `${bk.durationMinutes}m`}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="py-1">
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-500 font-sans">
+                                <span>No breaks taken (0m)</span>
+                              </span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* 7. Working Hours */}
+                        <td className="py-4 px-4 font-bold text-white font-mono text-xs align-top">
+                          <div className="bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 w-fit">
+                            {Math.floor(r.workingMinutes / 60)}h {r.workingMinutes % 60}m
+                          </div>
+                        </td>
+
+                        {/* 8. Overtime */}
+                        <td className="py-4 px-4 font-mono text-xs align-top">
+                          {r.overtimeMinutes > 0 ? (
+                            <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/25 inline-block">
+                              +{r.overtimeMinutes}m
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 py-1 inline-block">0m</span>
+                          )}
+                        </td>
+
+                        {/* 9. Status */}
+                        <td className="py-4 px-4 font-sans text-right align-top">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1.5 border whitespace-nowrap ${
                               r.status === 'Present'
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                                 : r.status === 'Late'
                                 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                 : r.status === 'On Leave'
@@ -911,6 +1034,15 @@ export default function AttendancePage() {
                                 : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                             }`}
                           >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                r.status === 'Present'
+                                  ? 'bg-emerald-400'
+                                  : r.status === 'Late'
+                                  ? 'bg-amber-400'
+                                  : 'bg-slate-400'
+                              }`}
+                            />
                             {r.status}
                           </span>
                         </td>
@@ -918,28 +1050,54 @@ export default function AttendancePage() {
 
                       {/* Expandable detailed drawer row */}
                       {isExpanded && r.breaksList && r.breaksList.length > 0 && (
-                        <tr className="bg-slate-950/70 border-b border-slate-800/80">
-                          <td colSpan={9} className="p-4 pl-12 font-sans">
-                            <div className="space-y-2">
-                              <h5 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                                <Info className="w-3.5 h-3.5 text-indigo-400" />
-                                Detailed Break Timestamps for {r.employeeName} ({r.date}):
-                              </h5>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        <tr className="bg-slate-950/80 border-b border-slate-800">
+                          <td colSpan={9} className="p-5 pl-10 font-sans">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h5 className="text-xs font-bold text-white flex items-center gap-2">
+                                  <Info className="w-4 h-4 text-indigo-400" />
+                                  <span>Detailed Biometric Break Audit Log for {r.employeeName} ({r.empId}) • {r.date}</span>
+                                </h5>
+                                <span className="text-[11px] text-slate-400">
+                                  Total Break Time: <strong className="text-amber-300 font-mono">{r.breakMinutes} mins</strong>
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {r.breaksList.map((item, i) => (
                                   <div
                                     key={i}
-                                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs flex items-center justify-between"
+                                    className="p-3 rounded-2xl bg-slate-900 border border-slate-700/80 text-xs flex flex-col justify-between gap-2 shadow-lg"
                                   >
-                                    <div>
-                                      <span className="font-bold text-white block">{item.type}</span>
-                                      <span className="text-[11px] text-slate-400 font-mono">
-                                        {item.startDate || r.date} • {item.startTime} → {item.endTime || 'Active'}
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-bold text-white flex items-center gap-1.5">
+                                        {item.type.toLowerCase().includes('lunch') ? (
+                                          <Utensils className="w-3.5 h-3.5 text-amber-400" />
+                                        ) : (
+                                          <Coffee className="w-3.5 h-3.5 text-sky-400" />
+                                        )}
+                                        {item.type}
+                                      </span>
+                                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                                        {item.durationFormatted}
                                       </span>
                                     </div>
-                                    <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-[10px] font-bold">
-                                      {item.durationFormatted}
-                                    </span>
+                                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800/80 font-mono text-[11px] flex items-center justify-between">
+                                      <div>
+                                        <span className="text-[9px] uppercase font-bold text-slate-500 block font-sans">Start</span>
+                                        <span className="text-white font-bold">{item.startTime}</span>
+                                      </div>
+                                      <span className="text-slate-600 font-sans font-bold">→</span>
+                                      <div className="text-right">
+                                        <span className="text-[9px] uppercase font-bold text-slate-500 block font-sans">End</span>
+                                        <span className="text-white font-bold">{item.endTime || 'Active'}</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800">
+                                      <span>Date: {item.startDate || r.date}</span>
+                                      <span className={item.endTime ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                                        {item.endTime ? '✓ Completed' : '● In-Progress'}
+                                      </span>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
