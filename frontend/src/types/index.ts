@@ -49,6 +49,7 @@ export interface BreakLog {
   endTime?: string | null;
   durationMinutes: number;
   durationFormatted: string;
+  startTimestamp?: number;
 }
 
 export interface PunchEvent {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth-context';
 import {
   Clock,
@@ -46,6 +46,15 @@ export default function AttendancePage() {
   const [viewMode, setViewMode] = useState<'breaks' | 'events'>('breaks');
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
   const [historySearch, setHistorySearch] = useState('');
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
+  // Real-time ticking clock
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const lateArrivals = [
     { name: 'Priya Sharma', empId: 'EMP003', dept: 'HR', date: '19 Oct 2026', checkIn: '09:25 AM', delay: '25 mins', reason: 'Metro delay' },
@@ -58,6 +67,46 @@ export default function AttendancePage() {
     { name: 'Amit Patel', empId: 'EMP002', dept: 'IT', overtime: '1h 45m', totalHours: '9h 45m', approved: true },
     { name: 'Rohan Gupta', empId: 'EMP005', dept: 'Trading', overtime: '2h 10m', totalHours: '10h 10m', approved: true },
   ];
+
+  // CSV Data Sheet Exporter
+  const exportDataSheetCSV = () => {
+    const headers = [
+      'Employee ID',
+      'Employee Name',
+      'Department',
+      'Date',
+      'Punch In',
+      'Punch Out',
+      'Breaks Log (Start - End)',
+      'Total Break (Mins)',
+      'Working Hours',
+      'Overtime (Mins)',
+      'Status',
+    ];
+    const rows = attendanceRecords.map((r) => [
+      r.empId || '',
+      `"${r.employeeName || ''}"`,
+      `"${r.department || ''}"`,
+      r.date,
+      r.checkIn || '-',
+      r.checkOut || 'Active',
+      `"${r.breaksList && r.breaksList.length > 0 ? r.breaksList.map((b) => `${b.type}: ${b.startTime} - ${b.endTime || 'Running'} (${b.durationFormatted})`).join(' | ') : '-'}"`,
+      r.breakMinutes,
+      `${Math.floor(r.workingMinutes / 60)}h ${r.workingMinutes % 60}m`,
+      r.overtimeMinutes,
+      r.status,
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Pavion_Attendance_DataSheet_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Attendance Data Sheet downloaded successfully as CSV!', 'success');
+  };
 
   const filteredRecords = attendanceRecords.filter((rec) => {
     if (!historySearch) return true;
@@ -81,7 +130,7 @@ export default function AttendancePage() {
             </span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time punch records, lunch & rest break telemetry, overtime calculations, and HR compliance audits.
+            Real-time biometric punch records, lunch & rest break telemetry, live data sheet, and HR compliance audits.
           </p>
         </div>
 
@@ -99,13 +148,16 @@ export default function AttendancePage() {
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeTab === 'history'
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Attendance Ledger
+            <span>Attendance Data Sheet</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              {attendanceRecords.length}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('hr-view')}
@@ -123,6 +175,64 @@ export default function AttendancePage() {
       {/* TODAY'S PUNCH STATION */}
       {activeTab === 'today' && (
         <div className="space-y-6">
+          {/* REAL-TIME CLOCK & BIOMETRIC RADAR BANNER */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+                <Clock className="w-6 h-6 animate-pulse text-indigo-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Live Real-Time Biometric Clock
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide">
+                    Live System Active
+                  </span>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight flex items-baseline gap-2">
+                  <span>
+                    {currentTime.toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true,
+                    })}
+                  </span>
+                  <span className="text-xs text-indigo-300 font-sans font-semibold">IST</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
+              <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+                <span className="text-slate-400 text-[10px] block uppercase font-semibold">Current Date</span>
+                <span className="text-white font-mono font-bold flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                  {currentTime.toLocaleDateString('en-GB', {
+                    weekday: 'short',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+
+              <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+                <span className="text-slate-400 text-[10px] block uppercase font-semibold">Shift Timing</span>
+                <span className="text-emerald-400 font-mono font-bold">General (09:00 - 18:30)</span>
+              </div>
+
+              <button
+                onClick={exportDataSheetCSV}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all ml-auto md:ml-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Data Sheet</span>
+              </button>
+            </div>
+          </div>
           {/* Main Interactive Punch Card */}
           <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/40 border border-slate-800 shadow-2xl relative overflow-hidden">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
@@ -495,6 +605,100 @@ export default function AttendancePage() {
             )}
           </div>
 
+          {/* TODAY'S LIVE ATTENDANCE DATA SHEET */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-indigo-400" />
+                  Live Attendance Data Sheet (Rahul Bajediyal - EMP001)
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Real-time entry in the organizational data sheet with live punch in, punch out, and every break timestamp
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30"
+                >
+                  <span>Open Full Organization Data Sheet</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={exportDataSheetCSV}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/40 font-semibold">
+                    <th className="py-3 px-3">Emp ID</th>
+                    <th className="py-3 px-3">Employee Name</th>
+                    <th className="py-3 px-3">Date</th>
+                    <th className="py-3 px-3">Punch In</th>
+                    <th className="py-3 px-3">Punch Out</th>
+                    <th className="py-3 px-3">All Breaks (Start - End)</th>
+                    <th className="py-3 px-3">Total Break</th>
+                    <th className="py-3 px-3">Working Time</th>
+                    <th className="py-3 px-3 text-right">Data Sheet Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-mono">
+                  <tr className="hover:bg-slate-800/40 bg-indigo-950/20">
+                    <td className="py-3.5 px-3 font-bold text-indigo-300">EMP001</td>
+                    <td className="py-3.5 px-3 font-sans font-bold text-white">Rahul Bajediyal</td>
+                    <td className="py-3.5 px-3 text-slate-300">{todayAttendance.date}</td>
+                    <td className="py-3.5 px-3 text-emerald-300 font-bold">
+                      {todayAttendance.checkIn ? `${todayAttendance.checkIn}` : '--:--'}
+                    </td>
+                    <td className="py-3.5 px-3 text-slate-300">
+                      {todayAttendance.checkOut ? `${todayAttendance.checkOut}` : 'Active / In-Progress'}
+                    </td>
+                    <td className="py-3.5 px-3 font-sans">
+                      {todayAttendance.breaks && todayAttendance.breaks.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {todayAttendance.breaks.map((b, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] font-mono text-amber-300"
+                            >
+                              {b.type.split(' ')[0]}: {b.startTime} - {b.endTime || 'Running'} ({b.durationFormatted})
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-slate-500 text-[11px]">No breaks taken yet</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-3 text-amber-300">{todayAttendance.breakTime}</td>
+                    <td className="py-3.5 px-3 text-white font-bold">{todayAttendance.workingTime}</td>
+                    <td className="py-3.5 px-3 font-sans text-right">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          todayAttendance.isOnBreak
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse'
+                            : todayAttendance.checkOut
+                            ? 'bg-slate-700 text-slate-300'
+                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        }`}
+                      >
+                        {todayAttendance.isOnBreak ? 'On Break' : todayAttendance.checkOut ? 'Shift Done' : 'Live Present'}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* QUICK RECENT ATTENDANCE LOGS WITH DETAILED BREAKS */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
@@ -608,14 +812,17 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* FULL ATTENDANCE LEDGER */}
+      {/* FULL ATTENDANCE DATA SHEET */}
       {activeTab === 'history' && (
         <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div>
-              <h3 className="text-base font-bold text-white">Organization Attendance Register</h3>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-400" />
+                Organization Attendance Data Sheet (Master Register)
+              </h3>
               <p className="text-xs text-slate-400">
-                Detailed biometric punch in/out timestamps and individual break logs for all staff
+                Live biometric punch in/out timestamps and individual break logs across all departments
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -627,11 +834,11 @@ export default function AttendancePage() {
                 className="px-3 py-1.5 rounded-xl text-xs bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
               />
               <button
-                onClick={() => showToast('Attendance register exported as CSV with Break telemetry', 'success')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 whitespace-nowrap"
+                onClick={exportDataSheetCSV}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 whitespace-nowrap transition-all"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export CSV</span>
+                <span>Export CSV Data Sheet</span>
               </button>
             </div>
           </div>
