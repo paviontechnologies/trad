@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuth } from '../../../lib/auth-context';
 import {
   rahulActivitySession,
   rahulAppUsage,
@@ -18,10 +19,12 @@ import {
   Sparkles,
   Info,
   Calendar,
+  Coffee,
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function MonitoringPage() {
+  const { todayAttendance } = useAuth();
   const [selectedEmployee, setSelectedEmployee] = useState('Rahul Bajediyal (EMP001)');
 
   const productivityDonut = [
@@ -71,6 +74,31 @@ export default function MonitoringPage() {
         </div>
       </div>
 
+      {/* Live Break Status Banner if Rahul is on break */}
+      {selectedEmployee.includes('Rahul') && todayAttendance.isOnBreak && (
+        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 shadow-xl flex items-center justify-between gap-3 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
+              <Coffee className="w-5 h-5 animate-bounce" />
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
+                Workstation Telemetry Paused • Employee on Break
+              </span>
+              <p className="text-sm font-bold text-white">
+                Rahul Bajediyal is currently away on <span className="text-amber-300 font-extrabold">{todayAttendance.currentBreakType}</span> (Started at {todayAttendance.currentBreakStartTime})
+              </p>
+              <p className="text-[11px] text-slate-300">
+                Continuous screenshot capture and input telemetry are paused per enterprise privacy compliance guidelines.
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold whitespace-nowrap">
+            Standby Mode
+          </span>
+        </div>
+      )}
+
       {/* Enterprise Disclaimer Alert Box */}
       <div className="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 flex items-start gap-3">
         <Sparkles className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
@@ -99,16 +127,24 @@ export default function MonitoringPage() {
           <span className="text-[10px] text-slate-400">Elapsed duration</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
-          <span className="text-[10px] uppercase font-bold text-slate-400">Active Working</span>
-          <div className="text-lg font-black text-emerald-400 mt-1 font-mono">06h 41m</div>
-          <span className="text-[10px] text-emerald-400/90 font-semibold">89.5% Active Rate</span>
+        <div className={`p-4 rounded-2xl border shadow-xl ${selectedEmployee.includes('Rahul') && todayAttendance.isOnBreak ? 'bg-amber-950/30 border-amber-500/40 shadow-amber-500/10' : 'bg-slate-900 border-slate-800'}`}>
+          <span className="text-[10px] uppercase font-bold text-slate-400">Current Status</span>
+          <div className={`text-lg font-black mt-1 font-mono ${selectedEmployee.includes('Rahul') && todayAttendance.isOnBreak ? 'text-amber-400' : 'text-emerald-400'}`}>
+            {selectedEmployee.includes('Rahul') && todayAttendance.isOnBreak ? `On ${todayAttendance.currentBreakType.split(' ')[0]}` : '06h 41m Active'}
+          </div>
+          <span className={`text-[10px] font-semibold ${selectedEmployee.includes('Rahul') && todayAttendance.isOnBreak ? 'text-amber-300' : 'text-emerald-400/90'}`}>
+            {selectedEmployee.includes('Rahul') && todayAttendance.isOnBreak ? `Started at ${todayAttendance.currentBreakStartTime}` : '89.5% Active Rate'}
+          </span>
         </div>
 
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl col-span-2 md:col-span-1">
-          <span className="text-[10px] uppercase font-bold text-slate-400">Idle / Inactive</span>
-          <div className="text-lg font-black text-amber-400 mt-1 font-mono">41m</div>
-          <span className="text-[10px] text-slate-400">Lunch & micro-breaks</span>
+          <span className="text-[10px] uppercase font-bold text-slate-400">Break Time Taken</span>
+          <div className="text-lg font-black text-amber-400 mt-1 font-mono">
+            {selectedEmployee.includes('Rahul') ? todayAttendance.breakTime : '41m'}
+          </div>
+          <span className="text-[10px] text-slate-400">
+            {selectedEmployee.includes('Rahul') ? `${todayAttendance.breaks.length} breaks recorded` : 'Lunch & micro-breaks'}
+          </span>
         </div>
       </div>
 

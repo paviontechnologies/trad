@@ -15,6 +15,7 @@ import {
   Shield,
   User,
   SlidersHorizontal,
+  Coffee,
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -25,6 +26,7 @@ export const Header: React.FC = () => {
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
+    todayAttendance,
   } = useAuth();
 
   const [showNotifs, setShowNotifs] = useState(false);
@@ -56,13 +58,25 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Center: Live Office Status Badge */}
-      <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-[11px] text-slate-300">
+      <div className="hidden lg:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-[11px] text-slate-300">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         <span className="font-semibold text-white">Bengaluru HQ</span>
         <span className="text-slate-500">•</span>
-        <span className="text-emerald-400 font-semibold">74 Active Logins</span>
-        <span className="text-slate-500">•</span>
-        <span className="text-slate-400">08 Oct 2026</span>
+        <span className="text-emerald-400 font-semibold">74 Active</span>
+        {todayAttendance.isOnBreak ? (
+          <>
+            <span className="text-slate-500">•</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 animate-pulse">
+              <Coffee className="w-3.5 h-3.5 text-amber-400" />
+              <span>Rahul on {todayAttendance.currentBreakType} ({todayAttendance.currentBreakStartTime})</span>
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-slate-500">•</span>
+            <span className="text-slate-400">{todayAttendance.date || '19 Oct 2026'}</span>
+          </>
+        )}
       </div>
 
       {/* Right Controls: Role Switcher Pill + Notifications + User */}

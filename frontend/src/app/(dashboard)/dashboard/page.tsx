@@ -85,9 +85,25 @@ export default function DashboardPage() {
     const kpis = [
       { title: 'Total Employees', value: '128', sub: '+12 this quarter', icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
       { title: 'Present Today', value: '112', sub: '87.5% attendance rate', icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-      { title: 'Absent Today', value: '8', sub: '3 planned, 5 unplanned', icon: UserX, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
+      {
+        title: 'Staff On Break',
+        value: todayAttendance.isOnBreak ? '1' : '0',
+        sub: todayAttendance.isOnBreak ? `Rahul (${todayAttendance.currentBreakType.split(' ')[0]})` : 'All 112 at desk',
+        icon: Coffee,
+        color: todayAttendance.isOnBreak ? 'text-amber-300' : 'text-slate-400',
+        bg: todayAttendance.isOnBreak ? 'bg-amber-500/20' : 'bg-slate-800/40',
+        border: todayAttendance.isOnBreak ? 'border-amber-500/40 shadow-lg shadow-amber-500/10' : 'border-slate-800',
+      },
       { title: 'On Leave', value: '8', sub: 'Annual & casual leaves', icon: CalendarDays, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-      { title: 'Currently Online', value: '74', sub: 'Live active desktop sessions', icon: Wifi, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
+      {
+        title: 'Currently Online',
+        value: todayAttendance.isOnBreak ? '73' : '74',
+        sub: todayAttendance.isOnBreak ? '73 Active • 1 on Break' : 'Live active desktop sessions',
+        icon: Wifi,
+        color: 'text-cyan-400',
+        bg: 'bg-cyan-500/10',
+        border: 'border-cyan-500/20',
+      },
       { title: 'Total Working Hours', value: '682 hrs', sub: 'Avg 7.2 hrs / employee', icon: Clock, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
       { title: 'Pending Payroll', value: '₹8,45,000', sub: 'October 2026 processing', icon: CreditCard, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
       { title: 'Security Alerts', value: '7', sub: '3 require review', icon: ShieldAlert, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
@@ -149,6 +165,41 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* LIVE BREAK TELEMETRY BANNER (Visible when Rahul is on break) */}
+        {todayAttendance.isOnBreak && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-amber-950/20 border border-amber-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <Coffee className="w-6 h-6 animate-bounce" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                    Live Telemetry Notice • Workstation Activity Paused
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                </div>
+                <h4 className="text-base font-bold text-white mt-0.5">
+                  Rahul Bajediyal (EMP001) is currently on <span className="text-amber-300 font-extrabold">{todayAttendance.currentBreakType || 'Break'}</span>
+                </h4>
+                <p className="text-xs text-slate-300">
+                  Break started at <strong className="text-white font-mono">{todayAttendance.currentBreakStartTime}</strong> on{' '}
+                  <span className="text-slate-300">{todayAttendance.date}</span> • Workstation screen & biometric telemetry in Standby mode.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+              <Link
+                href="/attendance"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <span>View Attendance Station</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* 8 KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {kpis.map((kpi, idx) => {
@@ -171,6 +222,172 @@ export default function DashboardPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* LIVE WORKFORCE WORKSTATION & BREAK TELEMETRY TABLE */}
+        <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Activity className="w-5 h-5 text-indigo-400" />
+                Live Employee Activity & Break Telemetry (Real-Time)
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time active workstations, live desktop status, and break monitoring across departments
+              </p>
+            </div>
+            <Link
+              href="/attendance"
+              className="flex items-center gap-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+            >
+              <span>Full Attendance Data Sheet →</span>
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/40">
+                  <th className="py-3 px-4 font-semibold">Employee</th>
+                  <th className="py-3 px-4 font-semibold">Department & Designation</th>
+                  <th className="py-3 px-4 font-semibold">Live Status</th>
+                  <th className="py-3 px-4 font-semibold">Punch In</th>
+                  <th className="py-3 px-4 font-semibold">Break Start / Duration</th>
+                  <th className="py-3 px-4 font-semibold">Workstation Telemetry</th>
+                  <th className="py-3 px-4 font-semibold text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 font-mono">
+                {/* Rahul Bajediyal (Dynamic) */}
+                <tr className={`transition-colors ${todayAttendance.isOnBreak ? 'bg-amber-500/10 hover:bg-amber-500/15' : 'hover:bg-slate-800/30'}`}>
+                  <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-indigo-600/30 text-indigo-300 font-bold flex items-center justify-center border border-indigo-500/30">
+                      RB
+                    </div>
+                    <div>
+                      <span>Rahul Bajediyal</span>
+                      <span className="text-[10px] text-slate-400 font-mono block">EMP001</span>
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-4 font-sans text-slate-300">
+                    <div>Information Technology</div>
+                    <span className="text-[10px] text-slate-500">Senior Software Engineer</span>
+                  </td>
+                  <td className="py-3.5 px-4 font-sans">
+                    {todayAttendance.isOnBreak ? (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 w-fit animate-pulse">
+                        <Coffee className="w-3.5 h-3.5 text-amber-400" />
+                        <span>On Break ({todayAttendance.currentBreakType})</span>
+                      </span>
+                    ) : todayAttendance.checkOut ? (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 w-fit">
+                        Shift Completed
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span>Active at Desk</span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4 text-indigo-300 font-bold">
+                    {todayAttendance.checkIn || '--:--'}
+                  </td>
+                  <td className="py-3.5 px-4 font-sans">
+                    {todayAttendance.isOnBreak ? (
+                      <div className="text-amber-300 font-mono">
+                        <span className="font-bold">Started: {todayAttendance.currentBreakStartTime}</span>
+                        <span className="text-[10px] text-slate-400 block font-sans">Live Timer • {todayAttendance.breakTime} total</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 font-mono">{todayAttendance.breakTime} total taken</span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4 font-sans">
+                    {todayAttendance.isOnBreak ? (
+                      <span className="text-amber-400/90 text-xs flex items-center gap-1 italic">
+                        <span>Biometric Paused • Away from Desk</span>
+                      </span>
+                    ) : (
+                      <span className="text-emerald-400/90 text-xs flex items-center gap-1">
+                        <span>VS Code • Active Telemetry</span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4 text-right font-sans">
+                    <Link
+                      href="/attendance"
+                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                    >
+                      Audit Log
+                    </Link>
+                  </td>
+                </tr>
+
+                {/* Amit Patel */}
+                <tr className="hover:bg-slate-800/30 transition-colors">
+                  <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600/30 text-emerald-300 font-bold flex items-center justify-center border border-emerald-500/30">
+                      AP
+                    </div>
+                    <div>
+                      <span>Amit Patel</span>
+                      <span className="text-[10px] text-slate-400 font-mono block">EMP002</span>
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-4 font-sans text-slate-300">
+                    <div>Information Technology</div>
+                    <span className="text-[10px] text-slate-500">Engineering Manager</span>
+                  </td>
+                  <td className="py-3.5 px-4 font-sans">
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span>Active at Desk</span>
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-indigo-300 font-bold">08:55 AM</td>
+                  <td className="py-3.5 px-4 font-sans text-slate-400">Lunch: 01:00 PM - 01:45 PM (45m)</td>
+                  <td className="py-3.5 px-4 font-sans text-emerald-400/90 text-xs">Jira & GitHub • Active</td>
+                  <td className="py-3.5 px-4 text-right font-sans">
+                    <Link href="/employees/EMP002" className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+                      Profile
+                    </Link>
+                  </td>
+                </tr>
+
+                {/* Priya Sharma */}
+                <tr className="hover:bg-slate-800/30 transition-colors">
+                  <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-purple-600/30 text-purple-300 font-bold flex items-center justify-center border border-purple-500/30">
+                      PS
+                    </div>
+                    <div>
+                      <span>Priya Sharma</span>
+                      <span className="text-[10px] text-slate-400 font-mono block">EMP003</span>
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-4 font-sans text-slate-300">
+                    <div>Human Resources</div>
+                    <span className="text-[10px] text-slate-500">HR Operations Lead</span>
+                  </td>
+                  <td className="py-3.5 px-4 font-sans">
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span>Active at Desk</span>
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-indigo-300 font-bold">09:25 AM</td>
+                  <td className="py-3.5 px-4 font-sans text-slate-400">Lunch: 01:30 PM - 02:15 PM (45m)</td>
+                  <td className="py-3.5 px-4 font-sans text-emerald-400/90 text-xs">HR Portal • Active</td>
+                  <td className="py-3.5 px-4 text-right font-sans">
+                    <Link href="/employees/EMP003" className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+                      Profile
+                    </Link>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Charts Row */}
@@ -456,12 +673,42 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* LIVE MANAGER TEAM BREAK ALERT */}
+        {todayAttendance.isOnBreak && (
+          <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
+                <Coffee className="w-5 h-5 animate-bounce" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
+                  Live Team Telemetry • Workstation Paused
+                </span>
+                <p className="text-sm font-bold text-white">
+                  Rahul Bajediyal is currently on <span className="text-amber-300 font-extrabold">{todayAttendance.currentBreakType}</span> (Started at {todayAttendance.currentBreakStartTime})
+                </p>
+                <p className="text-[11px] text-slate-300">
+                  Sprint activity telemetry is on hold. Rahul will resume development upon biometric break completion.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/attendance"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 whitespace-nowrap transition-all shadow-md shadow-amber-500/20"
+            >
+              Check Punch Record →
+            </Link>
+          </div>
+        )}
+
         {/* Manager Team KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
             <span className="text-xs text-slate-400 font-medium">My Team Size</span>
             <div className="text-2xl font-black text-white mt-1">12 Engineers</div>
-            <span className="text-[10px] text-emerald-400 font-semibold">11 Active Online Now</span>
+            <span className="text-[10px] text-emerald-400 font-semibold">
+              {todayAttendance.isOnBreak ? '10 Active • 1 On Break' : '11 Active Online Now'}
+            </span>
           </div>
           <div className="p-4 rounded-2xl bg-slate-900 border border-indigo-500/30 shadow-xl">
             <span className="text-xs text-slate-400 font-medium">Team Avg Productivity</span>
@@ -487,19 +734,44 @@ export default function DashboardPage() {
               <Activity className="w-4 h-4 text-indigo-400" />
               Live Team Telemetry & Current Window Status
             </h3>
-            <span className="text-xs text-emerald-400 font-semibold">11 Online • 1 On Leave</span>
+            <span className="text-xs text-emerald-400 font-semibold">
+              {todayAttendance.isOnBreak ? '10 Online • 1 On Break • 1 On Leave' : '11 Online • 1 On Leave'}
+            </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/30 text-xs space-y-2">
+            <div
+              className={`p-4 rounded-xl border text-xs space-y-2 transition-all ${
+                todayAttendance.isOnBreak
+                  ? 'bg-amber-950/25 border-amber-500/40 shadow-lg shadow-amber-500/10'
+                  : 'bg-slate-950 border-indigo-500/30'
+              }`}
+            >
               <div className="flex justify-between items-center">
                 <span className="font-bold text-white">Rahul Bajediyal</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">ONLINE</span>
+                {todayAttendance.isOnBreak ? (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 animate-pulse">
+                    <Coffee className="w-3 h-3 text-amber-400" />
+                    <span>ON BREAK ({todayAttendance.currentBreakType.split(' ')[0]})</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">ONLINE</span>
+                )}
               </div>
-              <p className="text-slate-400">Active Task: <strong>Refactor Auth Middleware</strong></p>
-              <div className="flex justify-between text-[11px] text-slate-400 border-t border-slate-800 pt-1.5">
-                <span>Active: <strong className="text-white">6h 41m</strong></span>
-                <span>Productivity: <strong className="text-emerald-400">78%</strong></span>
+              <p className="text-slate-400">
+                {todayAttendance.isOnBreak ? (
+                  <span className="text-amber-300 font-mono">
+                    Break Started: <strong>{todayAttendance.currentBreakStartTime}</strong> • Biometric Pause
+                  </span>
+                ) : (
+                  <span>
+                    Active Task: <strong>Refactor Auth Middleware</strong>
+                  </span>
+                )}
+              </p>
+              <div className="flex justify-between text-[11px] text-slate-400 border-t border-slate-800 pt-1.5 font-mono">
+                <span>Working: <strong className="text-white">{todayAttendance.workingTime}</strong></span>
+                <span>Break: <strong className="text-amber-400">{todayAttendance.breakTime}</strong></span>
               </div>
             </div>
 
