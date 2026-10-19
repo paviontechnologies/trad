@@ -36,6 +36,17 @@ import {
   Plus,
   Briefcase,
   Globe,
+  Search,
+  Eye,
+  ExternalLink,
+  X,
+  SlidersHorizontal,
+  BellRing,
+  Power,
+  RotateCcw,
+  Laptop,
+  ArrowUpRight,
+  Check,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -52,6 +63,10 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
+import {
+  getWorkforceTelemetryList,
+  EmployeeWorkforceTelemetry,
+} from '../../../lib/workforce-telemetry';
 
 export default function DashboardPage() {
   const {
@@ -77,6 +92,410 @@ export default function DashboardPage() {
     requestTrade,
     showToast,
   } = useAuth();
+
+  // Workforce filtering and Inspector state for Admin and Manager
+  const [deptFilter, setDeptFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [inspectingEmp, setInspectingEmp] = useState<EmployeeWorkforceTelemetry | null>(null);
+  const [activeInspectorTab, setActiveInspectorTab] = useState<'overview' | 'tasks' | 'apps' | 'admin'>('overview');
+
+  const allTelemetryList = getWorkforceTelemetryList(todayAttendance);
+
+  const filteredTelemetryList = allTelemetryList.filter((emp) => {
+    const matchesDept = deptFilter === 'ALL' || emp.departmentName === deptFilter;
+    const matchesStatus = statusFilter === 'ALL' || emp.status === statusFilter;
+    const matchesSearch =
+      searchQuery === '' ||
+      emp.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      emp.empId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      emp.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      emp.activeApp.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesDept && matchesStatus && matchesSearch;
+  });
+
+  const staffOnBreakList = allTelemetryList.filter((e) => e.status === 'ON_BREAK');
+  const onlineCount = allTelemetryList.filter((e) => e.status === 'ACTIVE').length;
+
+  // Reusable Employee Dashboard Inspector Modal
+  const renderEmployeeInspectorModal = () => {
+    if (!inspectingEmp) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-200">
+          {/* Modal Header */}
+          <div className="p-5 sm:p-6 border-b border-slate-800 bg-gradient-to-r from-slate-900 via-indigo-950/20 to-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <img
+                  src={
+                    inspectingEmp.avatarUrl ||
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'
+                  }
+                  alt={inspectingEmp.fullName}
+                  className="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-500/40 shadow-lg"
+                />
+                <span
+                  className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-900 ${
+                    inspectingEmp.status === 'ACTIVE'
+                      ? 'bg-emerald-400'
+                      : inspectingEmp.status === 'ON_BREAK'
+                      ? 'bg-amber-400 animate-pulse'
+                      : inspectingEmp.status === 'ON_LEAVE'
+                      ? 'bg-indigo-400'
+                      : 'bg-slate-500'
+                  }`}
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-bold text-white">{inspectingEmp.fullName}</h3>
+                  <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    {inspectingEmp.empId}
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                      inspectingEmp.status === 'ACTIVE'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        : inspectingEmp.status === 'ON_BREAK'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
+                        : inspectingEmp.status === 'ON_LEAVE'
+                        ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {inspectingEmp.status === 'ACTIVE'
+                      ? '● Active at Desk'
+                      : inspectingEmp.status === 'ON_BREAK'
+                      ? `☕ On Break (${inspectingEmp.breakText.split(' ')[0]})`
+                      : inspectingEmp.status === 'ON_LEAVE'
+                      ? '🌴 On Leave'
+                      : '○ Offline'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  <span className="text-slate-300 font-medium">{inspectingEmp.designation}</span> •{' '}
+                  <span className="text-indigo-400">{inspectingEmp.departmentName}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-center">
+              <Link
+                href={`/employees/${inspectingEmp.empId}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition-all"
+              >
+                <span>Full Profile</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+              <button
+                onClick={() => setInspectingEmp(null)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Navigation Tabs */}
+          <div className="flex border-b border-slate-800 px-6 bg-slate-900/50">
+            {[
+              { id: 'overview', label: 'Overview & Telemetry', icon: Activity },
+              { id: 'tasks', label: 'Assigned Tasks', icon: CheckCircle2 },
+              { id: 'apps', label: 'App & Web Runtime', icon: Laptop },
+              { id: 'admin', label: 'Administrative Controls', icon: SlidersHorizontal },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveInspectorTab(tab.id as any)}
+                  className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all ${
+                    activeInspectorTab === tab.id
+                      ? 'border-indigo-500 text-white bg-slate-800/40'
+                      : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Modal Body */}
+          <div className="p-6 overflow-y-auto space-y-6 flex-1">
+            {/* TAB 1: OVERVIEW & TELEMETRY */}
+            {activeInspectorTab === 'overview' && (
+              <div className="space-y-6">
+                {/* 4 Quick Stat KPIs */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                  <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
+                    <span className="text-[11px] font-medium text-slate-400">Live Productivity</span>
+                    <div className="text-2xl font-black text-emerald-400 mt-1">{inspectingEmp.productivity}%</div>
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                      <div
+                        className="bg-emerald-500 h-full rounded-full transition-all"
+                        style={{ width: `${inspectingEmp.productivity}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
+                    <span className="text-[11px] font-medium text-slate-400">Hours Clocked Today</span>
+                    <div className="text-2xl font-black text-white mt-1">{inspectingEmp.workingHours}</div>
+                    <span className="text-[10px] text-indigo-400 font-mono">Punch: {inspectingEmp.punchIn}</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
+                    <span className="text-[11px] font-medium text-slate-400">Break Taken</span>
+                    <div className="text-sm font-bold text-amber-300 mt-1 truncate">{inspectingEmp.breakText}</div>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {inspectingEmp.breakDurationMinutes} mins total
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
+                    <span className="text-[11px] font-medium text-slate-400">Activity Ratio</span>
+                    <div className="text-2xl font-black text-cyan-400 mt-1">
+                      {Math.round(
+                        (inspectingEmp.activeMinutes /
+                          (inspectingEmp.activeMinutes + inspectingEmp.idleMinutes || 1)) *
+                          100
+                      )}
+                      %
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                      {inspectingEmp.activeMinutes}m active • {inspectingEmp.idleMinutes}m idle
+                    </span>
+                  </div>
+                </div>
+
+                {/* Live Process & Screen Telemetry Card */}
+                <div className="p-5 rounded-2xl bg-slate-950/80 border border-indigo-500/30 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                      <Laptop className="w-4 h-4" />
+                      <span>Live Workstation Telemetry Simulation</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      <span>Telemetry Streaming</span>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 text-[11px]">Foreground Process</span>
+                      <p className="font-bold text-white mt-0.5">{inspectingEmp.activeApp}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 text-[11px]">Active Window Title</span>
+                      <p className="font-mono text-slate-200 mt-0.5 truncate">{inspectingEmp.activeWindow}</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="text-slate-400 text-[11px]">Current Assigned Task / Milestone</span>
+                      <p className="font-semibold text-indigo-300 mt-0.5">{inspectingEmp.currentTask}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: TASKS */}
+            {activeInspectorTab === 'tasks' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Sprint & Assigned Tasks</h4>
+                  <span className="text-xs text-slate-400">{inspectingEmp.tasks.length} active tasks</span>
+                </div>
+                <div className="space-y-2">
+                  {inspectingEmp.tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            task.status === 'COMPLETED'
+                              ? 'bg-emerald-400'
+                              : task.status === 'IN_PROGRESS'
+                              ? 'bg-amber-400 animate-pulse'
+                              : 'bg-slate-500'
+                          }`}
+                        />
+                        <span className="font-medium text-slate-200">{task.title}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            task.priority === 'HIGH'
+                              ? 'bg-rose-500/20 text-rose-300'
+                              : task.priority === 'MEDIUM'
+                              ? 'bg-amber-500/20 text-amber-300'
+                              : 'bg-slate-800 text-slate-400'
+                          }`}
+                        >
+                          {task.priority}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            task.status === 'COMPLETED'
+                              ? 'bg-emerald-500/20 text-emerald-400'
+                              : task.status === 'IN_PROGRESS'
+                              ? 'bg-amber-500/20 text-amber-400'
+                              : 'bg-slate-800 text-slate-400'
+                          }`}
+                        >
+                          {task.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: APPS & WEBSITES */}
+            {activeInspectorTab === 'apps' && (
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Top Applications Used Today</h4>
+                  <div className="space-y-3">
+                    {inspectingEmp.apps.map((app, idx) => (
+                      <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-white">{app.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400 font-mono">{app.duration}</span>
+                            <span className="text-indigo-400 font-bold">{app.percentage}%</span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${app.isProductive ? 'bg-indigo-500' : 'bg-rose-500'}`}
+                            style={{ width: `${app.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Websites Visited</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {inspectingEmp.websites.map((web, idx) => (
+                      <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs flex justify-between items-center">
+                        <div>
+                          <span className="font-bold text-white font-mono">{web.domain}</span>
+                          <span className="text-[10px] text-slate-400 block">{web.category}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-slate-300 font-mono font-bold">{web.duration}</span>
+                          <span className="text-[10px] text-slate-400 block">{web.visits} hits</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: ADMINISTRATIVE CONTROLS */}
+            {activeInspectorTab === 'admin' && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 text-xs text-indigo-300">
+                  <span className="font-bold">Administrative Supervisory Console:</span> Direct control signals are
+                  dispatched to the enterprise agent on {inspectingEmp.fullName}&apos;s workstation.
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <button
+                    onClick={() => {
+                      showToast(`Remote shift termination signal sent to ${inspectingEmp.fullName}`, 'info');
+                    }}
+                    className="p-4 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-750 text-left transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5 text-rose-400 font-bold text-xs mb-1">
+                      <Power className="w-4 h-4" />
+                      <span>Remote Shift Clock Out</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Forcefully clock out employee and secure terminal session.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (inspectingEmp.empId === 'EMP001' && todayAttendance.isOnBreak) {
+                        endBreak();
+                      }
+                      showToast(`Break terminated for ${inspectingEmp.fullName}`, 'success');
+                    }}
+                    className="p-4 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-750 text-left transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5 text-amber-400 font-bold text-xs mb-1">
+                      <Coffee className="w-4 h-4" />
+                      <span>Force Terminate Break</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      End current coffee or lunch break and resume productivity tracking.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      showToast(`Workstation ping & message delivered to ${inspectingEmp.fullName}`, 'success');
+                    }}
+                    className="p-4 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-750 text-left transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5 text-indigo-400 font-bold text-xs mb-1">
+                      <BellRing className="w-4 h-4" />
+                      <span>Ping Workstation Notification</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Send a priority desktop prompt to employee&apos;s active screen.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      showToast(`Biometric face re-verification triggered for ${inspectingEmp.fullName}`, 'info');
+                    }}
+                    className="p-4 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-750 text-left transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5 text-cyan-400 font-bold text-xs mb-1">
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Request Biometric Re-Auth</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Require instant face scan to confirm workstation presence.
+                    </p>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex justify-between items-center text-xs">
+            <span className="text-slate-400 font-mono">
+              Agent Telemetry v2.4 • EMP ID: {inspectingEmp.empId}
+            </span>
+            <button
+              onClick={() => setInspectingEmp(null)}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition-all"
+            >
+              Close Inspector
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // ==========================================
   // 1. SUPER ADMIN DASHBOARD
@@ -149,11 +568,11 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/employees/EMP001"
+              href="/employees"
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg transition-all"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Showcase: Rahul Profile</span>
+              <Users className="w-3.5 h-3.5" />
+              <span>Employee Directory (128)</span>
             </Link>
             <Link
               href="/reports"
@@ -165,8 +584,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* LIVE BREAK TELEMETRY BANNER (Visible when Rahul is on break) */}
-        {todayAttendance.isOnBreak && (
+        {/* LIVE BREAK TELEMETRY BANNER (General for all staff on break) */}
+        {staffOnBreakList.length > 0 && (
           <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-amber-950/20 border border-amber-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in">
             <div className="flex items-center gap-3.5">
               <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
@@ -175,25 +594,35 @@ export default function DashboardPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                    Live Telemetry Notice • Workstation Activity Paused
+                    Live Telemetry Notice • Workstation Standby Mode
                   </span>
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                 </div>
                 <h4 className="text-base font-bold text-white mt-0.5">
-                  Rahul Bajediyal (EMP001) is currently on <span className="text-amber-300 font-extrabold">{todayAttendance.currentBreakType || 'Break'}</span>
+                  {staffOnBreakList.map((e) => `${e.fullName} (${e.empId})`).join(', ')} currently on{' '}
+                  <span className="text-amber-300 font-extrabold">{todayAttendance.currentBreakType || 'Break'}</span>
                 </h4>
                 <p className="text-xs text-slate-300">
-                  Break started at <strong className="text-white font-mono">{todayAttendance.currentBreakStartTime}</strong> on{' '}
-                  <span className="text-slate-300">{todayAttendance.date}</span> • Workstation screen & biometric telemetry in Standby mode.
+                  Break started at{' '}
+                  <strong className="text-white font-mono">
+                    {todayAttendance.currentBreakStartTime || '01:15 PM'}
+                  </strong>{' '}
+                  • Biometric & screen telemetry in Standby mode.
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+              <button
+                onClick={() => setStatusFilter('ON_BREAK')}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <span>Filter Staff On Break ({staffOnBreakList.length})</span>
+              </button>
               <Link
                 href="/attendance"
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 whitespace-nowrap"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all flex items-center gap-1.5 whitespace-nowrap"
               >
-                <span>View Attendance Station</span>
+                <span>Attendance Log</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
@@ -224,169 +653,329 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* LIVE WORKFORCE WORKSTATION & BREAK TELEMETRY TABLE */}
-        <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        {/* LIVE WORKFORCE WORKSTATION, PRODUCTIVITY & CONTROL HUB */}
+        <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
             <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Activity className="w-5 h-5 text-indigo-400" />
-                Live Employee Activity & Break Telemetry (Real-Time)
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Real-time active workstations, live desktop status, and break monitoring across departments
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  <Activity className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    Company-Wide Employee Telemetry & Productivity Hub
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Live Stream
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Real-time oversight of all 15 active staff across 6 departments • Monitor live productivity, active window, punch log, and biometric break status
+                  </p>
+                </div>
+              </div>
             </div>
-            <Link
-              href="/attendance"
-              className="flex items-center gap-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300"
-            >
-              <span>Full Attendance Data Sheet →</span>
-            </Link>
+
+            <div className="flex items-center gap-2.5">
+              <Link
+                href="/attendance"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 transition-all"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Full Attendance Sheet</span>
+              </Link>
+              <Link
+                href="/monitoring"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition-all"
+              >
+                <Laptop className="w-3.5 h-3.5" />
+                <span>Live Surveillance Desk</span>
+              </Link>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Search Bar & Quick Filters Toolbar */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search employee by name, EMP ID, designation or active app..."
+                className="w-full pl-9 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Status Quick Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+              {[
+                { id: 'ALL', label: 'All Status', count: allTelemetryList.length },
+                { id: 'ACTIVE', label: 'Active at Desk', count: allTelemetryList.filter((e) => e.status === 'ACTIVE').length },
+                { id: 'ON_BREAK', label: 'On Break', count: staffOnBreakList.length },
+                { id: 'ON_LEAVE', label: 'On Leave', count: allTelemetryList.filter((e) => e.status === 'ON_LEAVE').length },
+                { id: 'OFFLINE', label: 'Offline', count: allTelemetryList.filter((e) => e.status === 'OFFLINE').length },
+              ].map((pill) => (
+                <button
+                  key={pill.id}
+                  onClick={() => setStatusFilter(pill.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    statusFilter === pill.id
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                      : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <span>{pill.label}</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                      statusFilter === pill.id ? 'bg-indigo-800 text-white' : 'bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {pill.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Department Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-800/80">
+            {[
+              { id: 'ALL', label: 'All Departments' },
+              { id: 'Information Technology', label: 'IT & Engineering' },
+              { id: 'Trading & Risk', label: 'Trading & Risk' },
+              { id: 'Finance & Accounts', label: 'Finance & Accounts' },
+              { id: 'Human Resources', label: 'Human Resources' },
+              { id: 'Sales & Marketing', label: 'Sales & Marketing' },
+              { id: 'Operations', label: 'Operations' },
+            ].map((dept) => {
+              const count =
+                dept.id === 'ALL'
+                  ? allTelemetryList.length
+                  : allTelemetryList.filter((e) => e.departmentName === dept.id).length;
+              return (
+                <button
+                  key={dept.id}
+                  onClick={() => setDeptFilter(dept.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    deptFilter === dept.id
+                      ? 'bg-slate-800 text-white font-bold border border-slate-700'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                  }`}
+                >
+                  <span>{dept.label}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Table Container */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-800/80">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/40">
+                <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/80">
                   <th className="py-3 px-4 font-semibold">Employee</th>
-                  <th className="py-3 px-4 font-semibold">Department & Designation</th>
+                  <th className="py-3 px-4 font-semibold">Department & Role</th>
                   <th className="py-3 px-4 font-semibold">Live Status</th>
-                  <th className="py-3 px-4 font-semibold">Punch In</th>
-                  <th className="py-3 px-4 font-semibold">Break Start / Duration</th>
-                  <th className="py-3 px-4 font-semibold">Workstation Telemetry</th>
-                  <th className="py-3 px-4 font-semibold text-right">Action</th>
+                  <th className="py-3 px-4 font-semibold">Productivity</th>
+                  <th className="py-3 px-4 font-semibold">Punch In / Out</th>
+                  <th className="py-3 px-4 font-semibold">Break Status</th>
+                  <th className="py-3 px-4 font-semibold">Active Window / Telemetry</th>
+                  <th className="py-3 px-4 font-semibold text-right">Admin Controls</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-mono">
-                {/* Rahul Bajediyal (Dynamic) */}
-                <tr className={`transition-colors ${todayAttendance.isOnBreak ? 'bg-amber-500/10 hover:bg-amber-500/15' : 'hover:bg-slate-800/30'}`}>
-                  <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-indigo-600/30 text-indigo-300 font-bold flex items-center justify-center border border-indigo-500/30">
-                      RB
-                    </div>
-                    <div>
-                      <span>Rahul Bajediyal</span>
-                      <span className="text-[10px] text-slate-400 font-mono block">EMP001</span>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans text-slate-300">
-                    <div>Information Technology</div>
-                    <span className="text-[10px] text-slate-500">Senior Software Engineer</span>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans">
-                    {todayAttendance.isOnBreak ? (
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 w-fit animate-pulse">
-                        <Coffee className="w-3.5 h-3.5 text-amber-400" />
-                        <span>On Break ({todayAttendance.currentBreakType})</span>
-                      </span>
-                    ) : todayAttendance.checkOut ? (
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 w-fit">
-                        Shift Completed
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <span>Active at Desk</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4 text-indigo-300 font-bold">
-                    {todayAttendance.checkIn || '--:--'}
-                  </td>
-                  <td className="py-3.5 px-4 font-sans">
-                    {todayAttendance.isOnBreak ? (
-                      <div className="text-amber-300 font-mono">
-                        <span className="font-bold">Started: {todayAttendance.currentBreakStartTime}</span>
-                        <span className="text-[10px] text-slate-400 block font-sans">Live Timer • {todayAttendance.breakTime} total</span>
+                {filteredTelemetryList.map((emp) => (
+                  <tr
+                    key={emp.empId}
+                    className={`transition-colors ${
+                      emp.status === 'ON_BREAK'
+                        ? 'bg-amber-500/10 hover:bg-amber-500/15'
+                        : emp.empId === 'EMP001'
+                        ? 'bg-indigo-950/20 hover:bg-indigo-950/30'
+                        : 'hover:bg-slate-800/30'
+                    }`}
+                  >
+                    {/* Employee Identity */}
+                    <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-3">
+                      <div className="relative">
+                        <img
+                          src={
+                            emp.avatarUrl ||
+                            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'
+                          }
+                          alt={emp.fullName}
+                          className="w-8 h-8 rounded-full object-cover border border-slate-700"
+                        />
+                        <span
+                          className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-slate-900 ${
+                            emp.status === 'ACTIVE'
+                              ? 'bg-emerald-400'
+                              : emp.status === 'ON_BREAK'
+                              ? 'bg-amber-400 animate-pulse'
+                              : emp.status === 'ON_LEAVE'
+                              ? 'bg-purple-400'
+                              : 'bg-slate-500'
+                          }`}
+                        />
                       </div>
-                    ) : (
-                      <span className="text-slate-400 font-mono">{todayAttendance.breakTime} total taken</span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4 font-sans">
-                    {todayAttendance.isOnBreak ? (
-                      <span className="text-amber-400/90 text-xs flex items-center gap-1 italic">
-                        <span>Biometric Paused • Away from Desk</span>
-                      </span>
-                    ) : (
-                      <span className="text-emerald-400/90 text-xs flex items-center gap-1">
-                        <span>VS Code • Active Telemetry</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-sans">
-                    <Link
-                      href="/attendance"
-                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
-                    >
-                      Audit Log
-                    </Link>
-                  </td>
-                </tr>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="hover:text-indigo-400 transition-colors cursor-pointer" onClick={() => setInspectingEmp(emp)}>
+                            {emp.fullName}
+                          </span>
+                          {emp.empId === 'EMP001' && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                              YOU
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono block">{emp.empId}</span>
+                      </div>
+                    </td>
 
-                {/* Amit Patel */}
-                <tr className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-emerald-600/30 text-emerald-300 font-bold flex items-center justify-center border border-emerald-500/30">
-                      AP
-                    </div>
-                    <div>
-                      <span>Amit Patel</span>
-                      <span className="text-[10px] text-slate-400 font-mono block">EMP002</span>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans text-slate-300">
-                    <div>Information Technology</div>
-                    <span className="text-[10px] text-slate-500">Engineering Manager</span>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans">
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span>Active at Desk</span>
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-indigo-300 font-bold">08:55 AM</td>
-                  <td className="py-3.5 px-4 font-sans text-slate-400">Lunch: 01:00 PM - 01:45 PM (45m)</td>
-                  <td className="py-3.5 px-4 font-sans text-emerald-400/90 text-xs">Jira & GitHub • Active</td>
-                  <td className="py-3.5 px-4 text-right font-sans">
-                    <Link href="/employees/EMP002" className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
-                      Profile
-                    </Link>
-                  </td>
-                </tr>
+                    {/* Department & Role */}
+                    <td className="py-3.5 px-4 font-sans text-slate-300">
+                      <div className="font-medium">{emp.departmentName}</div>
+                      <span className="text-[10px] text-slate-500">{emp.designation}</span>
+                    </td>
 
-                {/* Priya Sharma */}
-                <tr className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3.5 px-4 font-sans font-bold text-white flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-purple-600/30 text-purple-300 font-bold flex items-center justify-center border border-purple-500/30">
-                      PS
-                    </div>
-                    <div>
-                      <span>Priya Sharma</span>
-                      <span className="text-[10px] text-slate-400 font-mono block">EMP003</span>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans text-slate-300">
-                    <div>Human Resources</div>
-                    <span className="text-[10px] text-slate-500">HR Operations Lead</span>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans">
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span>Active at Desk</span>
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-indigo-300 font-bold">09:25 AM</td>
-                  <td className="py-3.5 px-4 font-sans text-slate-400">Lunch: 01:30 PM - 02:15 PM (45m)</td>
-                  <td className="py-3.5 px-4 font-sans text-emerald-400/90 text-xs">HR Portal • Active</td>
-                  <td className="py-3.5 px-4 text-right font-sans">
-                    <Link href="/employees/EMP003" className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
-                      Profile
-                    </Link>
-                  </td>
-                </tr>
+                    {/* Live Status Badge */}
+                    <td className="py-3.5 px-4 font-sans">
+                      {emp.status === 'ACTIVE' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          <span>Active at Desk</span>
+                        </span>
+                      ) : emp.status === 'ON_BREAK' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 w-fit animate-pulse">
+                          <Coffee className="w-3.5 h-3.5 text-amber-400" />
+                          <span>{emp.breakText.split('(')[0]}</span>
+                        </span>
+                      ) : emp.status === 'ON_LEAVE' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 w-fit">
+                          🌴 On Leave
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700 w-fit">
+                          Offline / Shift Done
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Live Productivity Score & Meter */}
+                    <td className="py-3.5 px-4 font-sans">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`font-bold font-mono text-xs ${
+                            emp.productivity >= 90
+                              ? 'text-emerald-400'
+                              : emp.productivity >= 80
+                              ? 'text-indigo-300'
+                              : emp.productivity > 0
+                              ? 'text-amber-400'
+                              : 'text-slate-500'
+                          }`}
+                        >
+                          {emp.productivity}%
+                        </span>
+                        <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              emp.productivity >= 90
+                                ? 'bg-emerald-500'
+                                : emp.productivity >= 80
+                                ? 'bg-indigo-500'
+                                : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${emp.productivity}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Punch In / Out */}
+                    <td className="py-3.5 px-4 text-xs">
+                      <div className="text-indigo-300 font-bold">{emp.punchIn}</div>
+                      <span className="text-[10px] text-slate-400 block">{emp.workingHours} clocked</span>
+                    </td>
+
+                    {/* Break Status / Duration */}
+                    <td className="py-3.5 px-4 font-sans text-xs">
+                      {emp.status === 'ON_BREAK' ? (
+                        <div className="text-amber-300 font-mono">
+                          <span className="font-bold">{emp.breakText}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-mono">{emp.breakText}</span>
+                      )}
+                    </td>
+
+                    {/* Workstation Telemetry */}
+                    <td className="py-3.5 px-4 font-sans text-xs max-w-[200px]">
+                      {emp.status === 'ON_BREAK' ? (
+                        <span className="text-amber-400/90 italic flex items-center gap-1">
+                          <Coffee className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span className="truncate">Biometric Paused • Away</span>
+                        </span>
+                      ) : emp.status === 'ACTIVE' ? (
+                        <div>
+                          <div className="text-emerald-400 font-medium truncate flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                            <span className="truncate">{emp.activeApp}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 truncate block font-mono">
+                            {emp.activeWindow}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-500 italic">No telemetry streaming</span>
+                      )}
+                    </td>
+
+                    {/* Admin Action Controls */}
+                    <td className="py-3.5 px-4 text-right font-sans">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setInspectingEmp(emp)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 transition-all shadow-sm"
+                          title="Inspect full individual dashboard, tasks and app telemetry"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Inspect</span>
+                        </button>
+                        <Link
+                          href={`/employees/${emp.empId}`}
+                          className="px-2 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all"
+                          title="View Profile"
+                        >
+                          Profile
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-slate-400 pt-2 px-1">
+            <span>
+              Showing <strong className="text-white">{filteredTelemetryList.length}</strong> of{' '}
+              <strong className="text-white">{allTelemetryList.length}</strong> workforce members
+            </span>
+            <span className="text-emerald-400 font-mono">
+              ● Central Governance Engine Active • Full Oversight Mode
+            </span>
           </div>
         </div>
 
@@ -648,6 +1237,9 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Interactive Employee Dashboard Inspector Modal */}
+        {renderEmployeeInspectorModal()}
       </div>
     );
   }
@@ -729,75 +1321,115 @@ export default function DashboardPage() {
 
         {/* Team Members Live Telemetry Cards */}
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Activity className="w-4 h-4 text-indigo-400" />
-              Live Team Telemetry & Current Window Status
-            </h3>
-            <span className="text-xs text-emerald-400 font-semibold">
-              {todayAttendance.isOnBreak ? '10 Online • 1 On Break • 1 On Leave' : '11 Online • 1 On Leave'}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Activity className="w-4 h-4 text-indigo-400" />
+                Engineering Team Live Telemetry & Productivity Roster
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time active workstations, code branches, and biometric break status for your 4 direct engineering reports
+              </p>
+            </div>
+            <span className="text-xs text-emerald-400 font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              {todayAttendance.isOnBreak ? '3 Online • 1 On Break' : '4 Online Active'}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div
-              className={`p-4 rounded-xl border text-xs space-y-2 transition-all ${
-                todayAttendance.isOnBreak
-                  ? 'bg-amber-950/25 border-amber-500/40 shadow-lg shadow-amber-500/10'
-                  : 'bg-slate-950 border-indigo-500/30'
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-white">Rahul Bajediyal</span>
-                {todayAttendance.isOnBreak ? (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 animate-pulse">
-                    <Coffee className="w-3 h-3 text-amber-400" />
-                    <span>ON BREAK ({todayAttendance.currentBreakType.split(' ')[0]})</span>
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">ONLINE</span>
-                )}
-              </div>
-              <p className="text-slate-400">
-                {todayAttendance.isOnBreak ? (
-                  <span className="text-amber-300 font-mono">
-                    Break Started: <strong>{todayAttendance.currentBreakStartTime}</strong> • Biometric Pause
-                  </span>
-                ) : (
-                  <span>
-                    Active Task: <strong>Refactor Auth Middleware</strong>
-                  </span>
-                )}
-              </p>
-              <div className="flex justify-between text-[11px] text-slate-400 border-t border-slate-800 pt-1.5 font-mono">
-                <span>Working: <strong className="text-white">{todayAttendance.workingTime}</strong></span>
-                <span>Break: <strong className="text-amber-400">{todayAttendance.breakTime}</strong></span>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {allTelemetryList
+              .filter((e) => e.departmentName === 'Information Technology' && e.empId !== 'EMP002')
+              .map((eng) => (
+                <div
+                  key={eng.empId}
+                  className={`p-4 rounded-2xl border text-xs space-y-3 transition-all ${
+                    eng.status === 'ON_BREAK'
+                      ? 'bg-amber-950/20 border-amber-500/40 shadow-lg shadow-amber-500/10'
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={
+                          eng.avatarUrl ||
+                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'
+                        }
+                        alt={eng.fullName}
+                        className="w-9 h-9 rounded-xl object-cover border border-slate-700"
+                      />
+                      <div>
+                        <span className="font-bold text-white block">{eng.fullName}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">{eng.empId}</span>
+                      </div>
+                    </div>
+                    {eng.status === 'ON_BREAK' ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 animate-pulse">
+                        <Coffee className="w-3 h-3 text-amber-400" />
+                        <span>BREAK</span>
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
+                        ONLINE
+                      </span>
+                    )}
+                  </div>
 
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-white">Aarav Deshmukh</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">ONLINE</span>
-              </div>
-              <p className="text-slate-400">Active Task: <strong>PostgreSQL Query Optimization</strong></p>
-              <div className="flex justify-between text-[11px] text-slate-400 border-t border-slate-800 pt-1.5">
-                <span>Active: <strong className="text-white">6h 30m</strong></span>
-                <span>Productivity: <strong className="text-emerald-400">91%</strong></span>
-              </div>
-            </div>
+                  {/* Productivity Score */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400">Productivity Score:</span>
+                      <strong className="text-emerald-400 font-mono">{eng.productivity}%</strong>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-500 h-full rounded-full transition-all"
+                        style={{ width: `${eng.productivity}%` }}
+                      />
+                    </div>
+                  </div>
 
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-white">Ananya Iyer</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">ONLINE</span>
-              </div>
-              <p className="text-slate-400">Active Task: <strong>Recharts Layout Integration</strong></p>
-              <div className="flex justify-between text-[11px] text-slate-400 border-t border-slate-800 pt-1.5">
-                <span>Active: <strong className="text-white">6h 00m</strong></span>
-                <span>Productivity: <strong className="text-emerald-400">83%</strong></span>
-              </div>
-            </div>
+                  {/* Active Task */}
+                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/80 space-y-1">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">
+                      Sprint Task
+                    </span>
+                    <p className="text-slate-200 font-medium text-[11px] truncate">
+                      {eng.currentTask}
+                    </p>
+                  </div>
+
+                  {/* Telemetry info */}
+                  <div className="flex justify-between text-[11px] text-slate-400 border-t border-slate-800 pt-2 font-mono">
+                    <span>Working: <strong className="text-white">{eng.workingHours}</strong></span>
+                    <span>Break: <strong className="text-amber-400">{eng.breakText.split('(')[0]}</strong></span>
+                  </div>
+
+                  {/* Manager Controls */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-800">
+                    <button
+                      onClick={() => setInspectingEmp(eng)}
+                      className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-bold bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 transition-all"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Inspect</span>
+                    </button>
+                    <Link
+                      href={`/employees/${eng.empId}`}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all"
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={() => showToast(`Workstation alert ping sent to ${eng.fullName}`, 'success')}
+                      className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+                      title="Ping Workstation"
+                    >
+                      <BellRing className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
 
@@ -851,6 +1483,9 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+
+        {/* Interactive Employee Dashboard Inspector Modal */}
+        {renderEmployeeInspectorModal()}
       </div>
     );
   }

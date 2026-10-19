@@ -62,13 +62,15 @@ export const Header: React.FC = () => {
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         <span className="font-semibold text-white">Bengaluru HQ</span>
         <span className="text-slate-500">•</span>
-        <span className="text-emerald-400 font-semibold">74 Active</span>
+        <span className="text-emerald-400 font-semibold">112 Present</span>
+        <span className="text-slate-500">•</span>
+        <span className="text-slate-300">73 Active Desk</span>
         {todayAttendance.isOnBreak ? (
           <>
             <span className="text-slate-500">•</span>
             <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 animate-pulse">
               <Coffee className="w-3.5 h-3.5 text-amber-400" />
-              <span>Rahul on {todayAttendance.currentBreakType} ({todayAttendance.currentBreakStartTime})</span>
+              <span>1 Staff On Break ({role === 'Employee' ? 'You' : 'Rahul'} - {todayAttendance.currentBreakType.split(' ')[0]})</span>
             </span>
           </>
         ) : (
