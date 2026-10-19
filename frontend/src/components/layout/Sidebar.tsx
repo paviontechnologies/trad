@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
 import {
   LayoutDashboard,
@@ -34,6 +34,7 @@ import {
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { role, user, logout } = useAuth();
 
   // 1. Super Admin Nav
@@ -300,7 +301,10 @@ export const Sidebar: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={() => {
+              logout();
+              router.push('/login');
+            }}
             title="Sign Out"
             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 transition-colors"
           >

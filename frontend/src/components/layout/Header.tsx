@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
 import { UserRole } from '../../types';
 import {
@@ -10,19 +11,19 @@ import {
   AlertTriangle,
   Info,
   Building2,
-  ChevronDown,
   Sparkles,
   Shield,
   User,
-  SlidersHorizontal,
   Coffee,
+  LogOut,
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
+  const router = useRouter();
   const {
     role,
     user,
-    switchRole,
+    logout,
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
@@ -30,18 +31,8 @@ export const Header: React.FC = () => {
   } = useAuth();
 
   const [showNotifs, setShowNotifs] = useState(false);
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  const rolesList: { role: UserRole; label: string; desc: string; color: string }[] = [
-    { role: 'Super Admin', label: 'Super Admin', desc: 'Central enterprise dashboard, all modules & audit logs', color: 'bg-indigo-500' },
-    { role: 'HR', label: 'HR Lead (Priya)', desc: 'Attendance oversight, leave approvals, employee directory', color: 'bg-emerald-500' },
-    { role: 'Manager', label: 'Manager (Amit)', desc: 'Team attendance, pending leave approvals, performance', color: 'bg-amber-500' },
-    { role: 'Employee', label: 'Employee (Rahul)', desc: 'Personal check-in/out, live timer, leaves, payslips', color: 'bg-cyan-500' },
-    { role: 'Finance', label: 'Finance (Sunita)', desc: 'Payroll processing, salary computation, payslips', color: 'bg-purple-500' },
-    { role: 'Trader', label: 'Trader (Rohan)', desc: 'Trading terminal, trade executions, risk exposure', color: 'bg-rose-500' },
-  ];
 
   return (
     <header className="h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 flex items-center justify-between sticky top-0 z-20">
@@ -81,60 +72,14 @@ export const Header: React.FC = () => {
         )}
       </div>
 
-      {/* Right Controls: Role Switcher Pill + Notifications + User */}
+      {/* Right Controls: Notifications + User Identity + Sign Out */}
       <div className="flex items-center gap-3">
-        {/* Client Demo Quick Role Switcher */}
-        <div className="relative">
-          <button
-            onClick={() => setShowRoleMenu(!showRoleMenu)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-950 to-slate-900 border border-indigo-500/30 hover:border-indigo-400/60 text-xs font-semibold text-white transition-all shadow-sm"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-slate-400 font-normal">Demo View:</span>
-            <span className="text-indigo-300 font-bold">{role}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
-          </button>
-
-          {showRoleMenu && (
-            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-3 py-2 border-b border-slate-800">
-                <p className="text-xs font-bold text-white">Switch Role Presentation</p>
-                <p className="text-[10px] text-slate-400">Simulate different user views instantly</p>
-              </div>
-              <div className="py-1 space-y-1">
-                {rolesList.map((item) => (
-                  <button
-                    key={item.role}
-                    onClick={() => {
-                      switchRole(item.role);
-                      setShowRoleMenu(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-all ${
-                      role === item.role
-                        ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 font-semibold'
-                        : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                        <span className="font-semibold">{item.label}</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400 pl-4">{item.desc}</p>
-                    </div>
-                    {role === item.role && <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Notifications Dropdown */}
         <div className="relative">
           <button
             onClick={() => setShowNotifs(!showNotifs)}
             className="relative p-2 rounded-xl bg-slate-800/70 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 transition-all"
+            title="Notifications"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
@@ -180,12 +125,49 @@ export const Header: React.FC = () => {
           )}
         </div>
 
-        {/* User Badge */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center font-bold text-xs text-white shadow-md shadow-indigo-600/20">
-            {user?.fullName?.charAt(0) || 'A'}
+        {/* User Identity Pill */}
+        <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center font-bold text-xs text-white shadow-sm">
+            {user?.fullName?.charAt(0) || 'U'}
+          </div>
+          <div className="text-left">
+            <p className="text-xs font-bold text-white leading-tight truncate max-w-[130px]">
+              {user?.fullName || 'User'}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`text-[10px] font-semibold px-1.5 py-0.2 rounded ${
+                  role === 'Super Admin'
+                    ? 'text-indigo-300 bg-indigo-500/20'
+                    : role === 'Manager'
+                    ? 'text-amber-300 bg-amber-500/20'
+                    : role === 'Employee'
+                    ? 'text-cyan-300 bg-cyan-500/20'
+                    : role === 'HR'
+                    ? 'text-emerald-300 bg-emerald-500/20'
+                    : role === 'Finance'
+                    ? 'text-purple-300 bg-purple-500/20'
+                    : 'text-rose-300 bg-rose-500/20'
+                }`}
+              >
+                {role === 'Employee' ? 'Engineer' : role}
+              </span>
+            </div>
           </div>
         </div>
+
+        {/* Sign Out Button */}
+        <button
+          onClick={() => {
+            logout();
+            router.push('/login');
+          }}
+          title="Sign Out of session"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:border-rose-500/50 text-xs font-semibold transition-all shadow-sm"
+        >
+          <LogOut className="w-3.5 h-3.5 text-rose-400" />
+          <span className="hidden sm:inline">Sign Out</span>
+        </button>
       </div>
     </header>
   );

@@ -241,22 +241,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = (email: string, pass: string): boolean => {
     const lowerEmail = email.toLowerCase().trim();
-    if (lowerEmail.includes('admin')) {
-      switchRole('Super Admin');
-    } else if (lowerEmail.includes('hr')) {
-      switchRole('HR');
-    } else if (lowerEmail.includes('manager')) {
-      switchRole('Manager');
-    } else if (lowerEmail.includes('employee') || lowerEmail.includes('rahul')) {
-      switchRole('Employee');
-    } else if (lowerEmail.includes('finance')) {
-      switchRole('Finance');
-    } else if (lowerEmail.includes('trader')) {
-      switchRole('Trader');
+    let targetRole: UserRole = 'Super Admin';
+    let name = 'Vikram Malhotra';
+
+    if (lowerEmail.includes('hr')) {
+      targetRole = 'HR';
+      name = 'Priya Sharma';
+    } else if (lowerEmail.includes('manager') || lowerEmail.includes('amit')) {
+      targetRole = 'Manager';
+      name = 'Amit Patel';
+    } else if (
+      lowerEmail.includes('employee') ||
+      lowerEmail.includes('engineer') ||
+      lowerEmail.includes('rahul') ||
+      lowerEmail.includes('dev')
+    ) {
+      targetRole = 'Employee';
+      name = 'Rahul Bajediyal';
+    } else if (lowerEmail.includes('finance') || lowerEmail.includes('sunita')) {
+      targetRole = 'Finance';
+      name = 'Sunita Menon';
+    } else if (lowerEmail.includes('trader') || lowerEmail.includes('rohan')) {
+      targetRole = 'Trader';
+      name = 'Rohan Gupta';
     } else {
-      switchRole('Super Admin');
+      targetRole = 'Super Admin';
+      name = 'Vikram Malhotra';
     }
-    showToast('Login successful! Welcome to PAVION Platform', 'success');
+
+    setRole(targetRole);
+    setUser({
+      id: `user-${targetRole.toLowerCase()}`,
+      email: lowerEmail,
+      fullName: name,
+      role: targetRole,
+      employeeId: targetRole === 'Employee' ? 'emp-1' : undefined,
+    });
+    addAuditLog('USER_LOGIN', 'Authentication', `Logged in as ${name} (${targetRole})`);
+    showToast(`Welcome back, ${name}! Logged in as ${targetRole}`, 'success');
     return true;
   };
 
