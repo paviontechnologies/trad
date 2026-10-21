@@ -39,6 +39,8 @@ export default function AttendancePage() {
     attendanceRecords,
     role,
     showToast,
+    user,
+    employees,
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'today' | 'history' | 'hr-view'>(
@@ -250,7 +252,7 @@ export default function AttendancePage() {
                   </span>
                   <span className="text-slate-600">•</span>
                   <span className="text-xs text-slate-300 font-medium">
-                    Employee: <strong className="text-white">Rahul Bajediyal</strong> (EMP001)
+                    Employee: <strong className="text-white">{role === 'Employee' ? (user?.fullName || 'Rahul Bajediyal') : 'Rahul Bajediyal'}</strong> ({role === 'Employee' ? (employees.find(e => e.id === user?.employeeId || e.empId === user?.employeeId)?.empId || 'EMP001') : 'EMP001'})
                   </span>
                   <span className="text-slate-600">•</span>
                   <span className="text-xs text-indigo-400 font-mono flex items-center gap-1">
@@ -451,7 +453,7 @@ export default function AttendancePage() {
                     <div className="space-y-1">
                       <h4 className="text-xs font-bold text-white">Biometric Self-Service Locked</h4>
                       <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Punch-in and rest breaks are strictly self-service. Only Rahul Bajediyal can log check-ins and break intervals from his personal dashboard.
+                        Punch-in and rest breaks are strictly self-service. Only authorized employees can log check-ins and break intervals from their personal portal.
                       </p>
                     </div>
                     <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
@@ -655,7 +657,7 @@ export default function AttendancePage() {
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <FileText className="w-4 h-4 text-indigo-400" />
-                  Live Attendance Data Sheet (Rahul Bajediyal - EMP001)
+                  Live Attendance Data Sheet ({role === 'Employee' ? (user?.fullName || 'Rahul Bajediyal') : 'Rahul Bajediyal'} - {role === 'Employee' ? (employees.find(e => e.id === user?.employeeId || e.empId === user?.employeeId)?.empId || 'EMP001') : 'EMP001'})
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Real-time entry in the organizational data sheet with live punch in, punch out, and every break timestamp
@@ -697,8 +699,12 @@ export default function AttendancePage() {
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 font-mono">
                   <tr className="hover:bg-slate-800/40 bg-indigo-950/20">
-                    <td className="py-3.5 px-3 font-bold text-indigo-300">EMP001</td>
-                    <td className="py-3.5 px-3 font-sans font-bold text-white">Rahul Bajediyal</td>
+                    <td className="py-3.5 px-3 font-bold text-indigo-300">
+                      {role === 'Employee' ? (employees.find(e => e.id === user?.employeeId || e.empId === user?.employeeId)?.empId || 'EMP001') : 'EMP001'}
+                    </td>
+                    <td className="py-3.5 px-3 font-sans font-bold text-white">
+                      {role === 'Employee' ? (user?.fullName || 'Rahul Bajediyal') : 'Rahul Bajediyal'}
+                    </td>
                     <td className="py-3.5 px-3 text-slate-300">{todayAttendance.date}</td>
                     <td className="py-3.5 px-3 text-emerald-300 font-bold">
                       {todayAttendance.checkIn ? `${todayAttendance.checkIn}` : '--:--'}
@@ -747,7 +753,7 @@ export default function AttendancePage() {
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white">Recent Attendance Logs (Rahul Bajediyal)</h3>
+                <h3 className="text-sm font-bold text-white">Recent Attendance Logs ({role === 'Employee' ? (user?.fullName || 'Rahul Bajediyal') : 'Rahul Bajediyal'})</h3>
                 <p className="text-xs text-slate-400">Previous shift logs with punch in, punch out, and break breakdown</p>
               </div>
               <span className="text-xs text-indigo-400 font-semibold">Last 3 Days</span>

@@ -25,6 +25,7 @@ export default function LeaveManagementPage() {
     rejectLeave,
     role,
     showToast,
+    user,
   } = useAuth();
 
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -41,6 +42,7 @@ export default function LeaveManagementPage() {
     e.preventDefault();
     applyLeave({
       ...formData,
+      leaveType: formData.leaveType as any,
       daysCount: Number(formData.daysCount),
     });
     setShowApplyModal(false);
@@ -59,7 +61,13 @@ export default function LeaveManagementPage() {
   // For Employee: Show ONLY their own leave requests
   // For Manager/HR/Admin: Show workforce or team leave requests
   const baseRequests = isEmployee
-    ? leaveRequests.filter((r) => r.empId === 'EMP001' || r.employeeName === 'Rahul Bajediyal')
+    ? leaveRequests.filter(
+        (r) =>
+          r.employeeId === user?.employeeId ||
+          r.empId === user?.employeeId ||
+          r.employeeName === user?.fullName ||
+          (!user?.employeeId && (r.empId === 'EMP001' || r.employeeName === 'Rahul Bajediyal'))
+      )
     : role === 'Manager'
     ? leaveRequests.filter((r) => r.departmentName === 'Information Technology' || r.empId === 'EMP001')
     : leaveRequests;
@@ -110,7 +118,7 @@ export default function LeaveManagementPage() {
       <div>
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
           {isEmployee
-            ? 'My Available Entitlements (Rahul Bajediyal • CY 2026)'
+            ? `My Available Entitlements (${user?.fullName || 'Employee'} • CY 2026)`
             : role === 'Manager'
             ? 'Team Entitlement Norms (IT Department • CY 2026)'
             : 'Company Leave Entitlement Policy (CY 2026)'}

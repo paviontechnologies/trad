@@ -13,6 +13,8 @@ export interface User {
   fullName: string;
   role: UserRole;
   employeeId?: string;
+  designation?: string;
+  avatarUrl?: string;
 }
 
 export interface Department {
@@ -73,7 +75,7 @@ export interface AttendanceRecord {
   workingMinutes: number;
   breakMinutes: number;
   overtimeMinutes: number;
-  status: 'Present' | 'Absent' | 'Half Day' | 'On Leave' | 'Late';
+  status: 'Present' | 'Absent' | 'Half Day' | 'On Leave' | 'Late' | 'On Break';
   breaksList?: BreakLog[];
 }
 

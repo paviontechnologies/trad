@@ -36,9 +36,73 @@ interface DemoRoleCard {
   activeBorder: string;
   textColor: string;
   icon: React.ElementType;
+  category: 'engineering' | 'management';
 }
 
 const DEMO_ROLES: DemoRoleCard[] = [
+  // 1. Software Engineers (IT Division)
+  {
+    id: 'employee-rahul',
+    role: 'Software Engineer',
+    name: 'Rahul Bajediyal',
+    designation: 'Senior Software Engineer (Full Stack)',
+    email: 'rahul@demo.com',
+    pass: 'Employee@123',
+    scope: 'Full-stack React & Node.js, personal punch clock, biometric lunch/tea breaks, sprint tasks & monthly data sheet',
+    badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+    borderColor: 'border-slate-800 hover:border-cyan-500/50',
+    activeBorder: 'border-cyan-500 ring-1 ring-cyan-500 bg-cyan-950/20',
+    textColor: 'text-cyan-400',
+    icon: Code,
+    category: 'engineering',
+  },
+  {
+    id: 'employee-aarav',
+    role: 'Backend Architect',
+    name: 'Aarav Deshmukh',
+    designation: 'Backend Architect (Distributed Systems)',
+    email: 'aarav@demo.com',
+    pass: 'Aarav@123',
+    scope: 'Distributed Redis cluster, high-throughput microservices, sub-millisecond feed & personal punch station',
+    badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    borderColor: 'border-slate-800 hover:border-blue-500/50',
+    activeBorder: 'border-blue-500 ring-1 ring-blue-500 bg-blue-950/20',
+    textColor: 'text-blue-400',
+    icon: Code,
+    category: 'engineering',
+  },
+  {
+    id: 'employee-ananya',
+    role: 'Frontend Lead',
+    name: 'Ananya Iyer',
+    designation: 'Frontend Lead (UI/UX Systems)',
+    email: 'ananya@demo.com',
+    pass: 'Ananya@123',
+    scope: 'Glassmorphic design system, Next.js telemetry widgets, personal punch station & sick leave tracker',
+    badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
+    borderColor: 'border-slate-800 hover:border-teal-500/50',
+    activeBorder: 'border-teal-500 ring-1 ring-teal-500 bg-teal-950/20',
+    textColor: 'text-teal-400',
+    icon: Code,
+    category: 'engineering',
+  },
+  {
+    id: 'employee-diya',
+    role: 'QA Engineer',
+    name: 'Diya Sengupta',
+    designation: 'QA Automation Engineer (E2E Test Suites)',
+    email: 'diya@demo.com',
+    pass: 'Diya@123',
+    scope: 'Playwright test suites, biometric punch test matrices, CI/CD regression pipelines & personal attendance',
+    badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
+    borderColor: 'border-slate-800 hover:border-sky-500/50',
+    activeBorder: 'border-sky-500 ring-1 ring-sky-500 bg-sky-950/20',
+    textColor: 'text-sky-400',
+    icon: Code,
+    category: 'engineering',
+  },
+
+  // 2. Leadership & Department Heads
   {
     id: 'admin',
     role: 'Super Admin',
@@ -52,6 +116,7 @@ const DEMO_ROLES: DemoRoleCard[] = [
     activeBorder: 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-950/20',
     textColor: 'text-indigo-400',
     icon: ShieldCheck,
+    category: 'management',
   },
   {
     id: 'manager',
@@ -66,20 +131,7 @@ const DEMO_ROLES: DemoRoleCard[] = [
     activeBorder: 'border-amber-500 ring-1 ring-amber-500 bg-amber-950/20',
     textColor: 'text-amber-400',
     icon: Briefcase,
-  },
-  {
-    id: 'employee',
-    role: 'Software Engineer',
-    name: 'Rahul Bajediyal',
-    designation: 'Senior Software Engineer',
-    email: 'employee@demo.com',
-    pass: 'Employee@123',
-    scope: 'Personal punch clock, lunch/tea breaks, daily sprint tasks & full monthly attendance sheet',
-    badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
-    borderColor: 'border-slate-800 hover:border-cyan-500/50',
-    activeBorder: 'border-cyan-500 ring-1 ring-cyan-500 bg-cyan-950/20',
-    textColor: 'text-cyan-400',
-    icon: Code,
+    category: 'management',
   },
   {
     id: 'hr',
@@ -94,6 +146,7 @@ const DEMO_ROLES: DemoRoleCard[] = [
     activeBorder: 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-950/20',
     textColor: 'text-emerald-400',
     icon: Users,
+    category: 'management',
   },
   {
     id: 'finance',
@@ -108,6 +161,7 @@ const DEMO_ROLES: DemoRoleCard[] = [
     activeBorder: 'border-purple-500 ring-1 ring-purple-500 bg-purple-950/20',
     textColor: 'text-purple-400',
     icon: CreditCard,
+    category: 'management',
   },
   {
     id: 'trader',
@@ -122,6 +176,7 @@ const DEMO_ROLES: DemoRoleCard[] = [
     activeBorder: 'border-rose-500 ring-1 ring-rose-500 bg-rose-950/20',
     textColor: 'text-rose-400',
     icon: TrendingUp,
+    category: 'management',
   },
 ];
 
@@ -129,9 +184,10 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('admin');
-  const [email, setEmail] = useState('admin@demo.com');
-  const [password, setPassword] = useState('Admin@123');
+  const [roleCategory, setRoleCategory] = useState<'all' | 'engineering' | 'management'>('all');
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('employee-rahul');
+  const [email, setEmail] = useState('rahul@demo.com');
+  const [password, setPassword] = useState('Employee@123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -309,7 +365,7 @@ export default function LoginPage() {
             </form>
           </div>
 
-          {/* RIGHT: 6-Role Auto-Fill Cards (7 cols) */}
+          {/* RIGHT: Role Auto-Fill Cards (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -323,9 +379,48 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* 6 Grid Cards */}
+            {/* Category Filter Tabs */}
+            <div className="flex items-center gap-2 p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setRoleCategory('all')}
+                className={`flex-1 py-2 px-3 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 ${
+                  roleCategory === 'all'
+                    ? 'bg-indigo-600 text-white shadow-md font-bold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>All Profiles ({DEMO_ROLES.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleCategory('engineering')}
+                className={`flex-1 py-2 px-3 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 ${
+                  roleCategory === 'engineering'
+                    ? 'bg-cyan-600 text-white shadow-md font-bold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Code className="w-3.5 h-3.5 text-cyan-200" />
+                <span>Engineering Squad (4)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleCategory('management')}
+                className={`flex-1 py-2 px-3 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 ${
+                  roleCategory === 'management'
+                    ? 'bg-amber-600 text-white shadow-md font-bold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5 text-amber-200" />
+                <span>Management (5)</span>
+              </button>
+            </div>
+
+            {/* Grid Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {DEMO_ROLES.map((card) => {
+              {DEMO_ROLES.filter((card) => roleCategory === 'all' || card.category === roleCategory).map((card) => {
                 const Icon = card.icon;
                 const isSelected = selectedRoleId === card.id;
                 const isDirectLoading = directLoadingRole === card.id;

@@ -91,6 +91,7 @@ export default function DashboardPage() {
     resolveAlert,
     requestTrade,
     showToast,
+    currentEmployee,
   } = useAuth();
 
   // Workforce filtering and Inspector state for Admin and Manager
@@ -504,7 +505,9 @@ export default function DashboardPage() {
       {
         title: 'Staff On Break',
         value: todayAttendance.isOnBreak ? '1' : '0',
-        sub: todayAttendance.isOnBreak ? `Rahul (${todayAttendance.currentBreakType.split(' ')[0]})` : 'All 112 at desk',
+        sub: todayAttendance.isOnBreak
+          ? `${todayAttendance.currentBreakEmployeeName?.split(' ')[0] || 'Staff'} (${todayAttendance.currentBreakType.split(' ')[0]})`
+          : 'All 112 at desk',
         icon: Coffee,
         color: todayAttendance.isOnBreak ? 'text-amber-300' : 'text-slate-400',
         bg: todayAttendance.isOnBreak ? 'bg-amber-500/20' : 'bg-slate-800/40',
@@ -1274,10 +1277,10 @@ export default function DashboardPage() {
                   Live Team Telemetry • Workstation Paused
                 </span>
                 <p className="text-sm font-bold text-white">
-                  Rahul Bajediyal is currently on <span className="text-amber-300 font-extrabold">{todayAttendance.currentBreakType}</span> (Started at {todayAttendance.currentBreakStartTime})
+                  {todayAttendance.currentBreakEmployeeName || 'Rahul Bajediyal'} is currently on <span className="text-amber-300 font-extrabold">{todayAttendance.currentBreakType}</span> (Started at {todayAttendance.currentBreakStartTime})
                 </p>
                 <p className="text-[11px] text-slate-300">
-                  Sprint activity telemetry is on hold. Rahul will resume development upon biometric break completion.
+                  Sprint activity telemetry is on hold. {todayAttendance.currentBreakEmployeeName?.split(' ')[0] || 'Employee'} will resume development upon biometric break completion.
                 </p>
               </div>
             </div>
@@ -1703,10 +1706,10 @@ export default function DashboardPage() {
             <span>PAVION Employee Self-Service Space</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-            Good Morning, Rahul 👋
+            Good Morning, {user?.fullName?.split(' ')[0] || 'Engineer'} 👋
           </h1>
           <p className="text-sm text-slate-300 mt-1">
-            Senior Software Engineer • IT Department • Bengaluru HQ
+            {user?.designation || currentEmployee?.designation || 'Software Engineer'} • IT Department • Bengaluru HQ
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -1758,15 +1761,15 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           {!todayAttendance.isOnBreak ? (
-            <button onClick={startBreak} className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 text-white">
+            <button onClick={() => startBreak()} className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 text-white">
               Take Break
             </button>
           ) : (
-            <button onClick={endBreak} className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white">
+            <button onClick={() => endBreak()} className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white">
               Resume Work
             </button>
           )}
-          <button onClick={checkOut} className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600/80 text-white">
+          <button onClick={() => checkOut()} className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600/80 text-white">
             Clock Out
           </button>
         </div>

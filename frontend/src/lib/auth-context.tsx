@@ -59,6 +59,7 @@ interface AuthContextType {
     isOnBreak: boolean;
     currentBreakStartTime: string | null;
     currentBreakType: string;
+    currentBreakEmployeeName?: string;
     breaks: BreakLog[];
     events: PunchEvent[];
   };
@@ -122,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isOnBreak: false,
     currentBreakStartTime: null as string | null,
     currentBreakType: 'Lunch Break',
+    currentBreakEmployeeName: undefined as string | undefined,
     breaks: [
       {
         id: 'brk-1',
@@ -243,13 +245,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const lowerEmail = email.toLowerCase().trim();
     let targetRole: UserRole = 'Super Admin';
     let name = 'Vikram Malhotra';
+    let empId: string | undefined = undefined;
+    let designation = 'Chief Executive Officer';
 
-    if (lowerEmail.includes('hr')) {
-      targetRole = 'HR';
-      name = 'Priya Sharma';
-    } else if (lowerEmail.includes('manager') || lowerEmail.includes('amit')) {
-      targetRole = 'Manager';
-      name = 'Amit Patel';
+    if (lowerEmail.includes('aarav')) {
+      targetRole = 'Employee';
+      name = 'Aarav Deshmukh';
+      empId = 'emp-6';
+      designation = 'Backend Architect';
+    } else if (lowerEmail.includes('ananya')) {
+      targetRole = 'Employee';
+      name = 'Ananya Iyer';
+      empId = 'emp-7';
+      designation = 'Frontend Lead';
+    } else if (lowerEmail.includes('diya')) {
+      targetRole = 'Employee';
+      name = 'Diya Sengupta';
+      empId = 'emp-13';
+      designation = 'QA Automation Engineer';
     } else if (
       lowerEmail.includes('employee') ||
       lowerEmail.includes('engineer') ||
@@ -258,27 +271,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ) {
       targetRole = 'Employee';
       name = 'Rahul Bajediyal';
+      empId = 'emp-1';
+      designation = 'Senior Software Engineer';
+    } else if (lowerEmail.includes('manager') || lowerEmail.includes('amit')) {
+      targetRole = 'Manager';
+      name = 'Amit Patel';
+      empId = 'emp-2';
+      designation = 'Engineering Manager';
+    } else if (lowerEmail.includes('hr') || lowerEmail.includes('priya')) {
+      targetRole = 'HR';
+      name = 'Priya Sharma';
+      empId = 'emp-3';
+      designation = 'Lead HR Specialist';
     } else if (lowerEmail.includes('finance') || lowerEmail.includes('sunita')) {
       targetRole = 'Finance';
       name = 'Sunita Menon';
+      empId = 'emp-4';
+      designation = 'Finance Controller';
     } else if (lowerEmail.includes('trader') || lowerEmail.includes('rohan')) {
       targetRole = 'Trader';
       name = 'Rohan Gupta';
+      empId = 'emp-5';
+      designation = 'Senior Derivatives Trader';
     } else {
       targetRole = 'Super Admin';
       name = 'Vikram Malhotra';
+      designation = 'Chief Executive Officer';
     }
 
     setRole(targetRole);
     setUser({
-      id: `user-${targetRole.toLowerCase()}`,
+      id: `user-${empId || targetRole.toLowerCase()}`,
       email: lowerEmail,
       fullName: name,
       role: targetRole,
-      employeeId: targetRole === 'Employee' ? 'emp-1' : undefined,
+      employeeId: empId,
+      designation: designation,
     });
-    addAuditLog('USER_LOGIN', 'Authentication', `Logged in as ${name} (${targetRole})`);
-    showToast(`Welcome back, ${name}! Logged in as ${targetRole}`, 'success');
+    addAuditLog('USER_LOGIN', 'Authentication', `Logged in as ${name} (${designation} • ${targetRole})`);
+    showToast(`Welcome back, ${name}! Logged in as ${designation}`, 'success');
     return true;
   };
 
@@ -311,12 +342,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const applyLeave = (req: Partial<LeaveRequest>) => {
+    const targetEmpId = user?.employeeId || 'emp-1';
+    const empRecord = employees.find((e) => e.id === targetEmpId || e.empId === targetEmpId);
+    const resolvedName = user?.fullName || empRecord?.fullName || 'Rahul Bajediyal';
+    const resolvedCode = empRecord?.empId || 'EMP001';
+    const resolvedDept = empRecord?.departmentName || 'Information Technology';
+
     const newLeave: LeaveRequest = {
       id: `leave-${Date.now()}`,
-      employeeId: 'emp-1',
-      employeeName: 'Rahul Bajediyal',
-      empId: 'EMP001',
-      departmentName: 'Information Technology',
+      employeeId: targetEmpId,
+      employeeName: resolvedName,
+      empId: resolvedCode,
+      departmentName: resolvedDept,
       leaveType: req.leaveType || 'Annual',
       startDate: req.startDate || '2026-10-20',
       endDate: req.endDate || '2026-10-22',
@@ -326,7 +363,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: 'PENDING',
     };
     setLeaveRequests((prev) => [newLeave, ...prev]);
-    addAuditLog('LEAVE_APPLIED', 'Leave Management', `Applied for ${newLeave.daysCount} days of ${newLeave.leaveType} leave`);
+    addAuditLog('LEAVE_APPLIED', 'Leave Management', `Applied for ${newLeave.daysCount} days of ${newLeave.leaveType} leave by ${resolvedName}`);
     showToast(`Leave application submitted for approval!`, 'success');
   };
 
@@ -407,16 +444,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     setAttendanceRecords((prev) => {
       const todayDate = '19 Oct 2026';
+      const targetEmpId = user?.employeeId || 'emp-1';
+      const empRecord = employees.find((e) => e.id === targetEmpId || e.empId === targetEmpId);
+      const resolvedEmpCode = empRecord?.empId || 'EMP001';
+      const resolvedName = user?.fullName || empRecord?.fullName || 'Rahul Bajediyal';
+      const resolvedDept = empRecord?.departmentName || 'Information Technology';
+
       const existingIdx = prev.findIndex(
-        (r) => (r.employeeId === 'emp-1' || r.empId === 'EMP001') && r.date === todayDate
+        (r) => (r.employeeId === targetEmpId || r.empId === resolvedEmpCode) && r.date === todayDate
       );
 
       const updatedRecord: AttendanceRecord = {
-        id: existingIdx >= 0 ? prev[existingIdx].id : 'att-1',
-        employeeId: 'emp-1',
-        empId: 'EMP001',
-        employeeName: 'Rahul Bajediyal',
-        department: 'Information Technology',
+        id: existingIdx >= 0 ? prev[existingIdx].id : `att-${targetEmpId}`,
+        employeeId: targetEmpId,
+        empId: resolvedEmpCode,
+        employeeName: resolvedName,
+        department: resolvedDept,
         date: todayDate,
         checkIn: checkInTime,
         checkOut: checkOutTime,
@@ -510,6 +553,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOnBreak: true,
         currentBreakStartTime: time,
         currentBreakType: type,
+        currentBreakEmployeeName: user?.fullName || 'Rahul Bajediyal',
         breaks: updatedBreaks,
         events: [newEvent, ...prev.events],
       };
@@ -567,6 +611,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...prev,
         isOnBreak: false,
         currentBreakStartTime: null,
+        currentBreakEmployeeName: undefined,
         breakMinutes: newTotalMinutes,
         breakTime: formattedTotal,
         breaks: updatedBreaks,
@@ -664,7 +709,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast('All notifications marked as read', 'info');
   };
 
-  const currentEmployee = employees.find((e) => e.empId === 'EMP001') || employees[0];
+  const currentEmployee =
+    employees.find((e) => e.id === user?.employeeId || e.empId === user?.employeeId) ||
+    employees.find((e) => e.empId === 'EMP001') ||
+    employees[0];
 
   return (
     <AuthContext.Provider

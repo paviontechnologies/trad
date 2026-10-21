@@ -68,6 +68,7 @@ export default function EmployeesPage() {
     const dept = initialDepartments.find((d) => d.id === formData.departmentId);
     addEmployee({
       ...formData,
+      status: formData.status as any,
       departmentName: dept?.name || 'Information Technology',
     });
     setShowAddModal(false);
