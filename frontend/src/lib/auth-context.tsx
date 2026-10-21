@@ -439,6 +439,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Punch actions
   const checkIn = () => {
+    if (role !== 'Employee') {
+      showToast('Permission Denied: Only employees can log biometric check-ins from their portal.', 'error');
+      return;
+    }
     const time = formatTime12();
     const dateStr = '19 Oct 2026';
 
@@ -470,6 +474,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const startBreak = (type: string = 'Tea / Short Break') => {
+    if (role !== 'Employee') {
+      showToast('Permission Denied: Managers cannot start breaks for employees. Breaks are strictly employee self-service.', 'error');
+      return;
+    }
     const time = formatTime12();
     const dateStr = '19 Oct 2026';
     const breakId = `brk-${Date.now()}`;
@@ -512,6 +520,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const endBreak = () => {
+    if (role !== 'Employee') {
+      showToast('Permission Denied: Managers cannot end breaks for employees. Breaks must be ended by the employee.', 'error');
+      return;
+    }
     const time = formatTime12();
     const dateStr = '19 Oct 2026';
 
@@ -567,6 +579,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const checkOut = () => {
+    if (role !== 'Employee') {
+      showToast('Permission Denied: Only employees can punch out from their active shift.', 'error');
+      return;
+    }
     const time = formatTime12();
     const dateStr = '19 Oct 2026';
 

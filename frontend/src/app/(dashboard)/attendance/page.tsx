@@ -41,7 +41,9 @@ export default function AttendancePage() {
     showToast,
   } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'today' | 'history' | 'hr-view'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'history' | 'hr-view'>(
+    role === 'Employee' ? 'today' : 'history'
+  );
   const [selectedBreakType, setSelectedBreakType] = useState('Lunch Break');
   const [viewMode, setViewMode] = useState<'breaks' | 'events'>('breaks');
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
@@ -144,7 +146,7 @@ export default function AttendancePage() {
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            My Punch Station
+            {role === 'Employee' ? 'My Punch Station' : 'Live Station (Read-Only)'}
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -339,94 +341,136 @@ export default function AttendancePage() {
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={endBreak}
-                      className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 flex items-center gap-1.5 whitespace-nowrap transition-all"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      <span>End Break & Resume Work</span>
-                    </button>
+                    {role === 'Employee' ? (
+                      <button
+                        onClick={endBreak}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 flex items-center gap-1.5 whitespace-nowrap transition-all"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>End Break & Resume Work</span>
+                      </button>
+                    ) : (
+                      <span className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 whitespace-nowrap flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                        <span>Employee Break in Progress</span>
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
 
               {/* Right Action Buttons */}
               <div className="flex flex-col gap-3 min-w-[240px] border-t lg:border-t-0 lg:border-l border-slate-800 pt-6 lg:pt-0 lg:pl-8">
-                {!todayAttendance.checkIn ? (
-                  <button
-                    onClick={checkIn}
-                    className="w-full py-4 px-6 rounded-2xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
-                  >
-                    <Play className="w-5 h-5 fill-current" />
-                    <span>Punch In (Check In)</span>
-                  </button>
-                ) : !todayAttendance.checkOut ? (
-                  <>
-                    {!todayAttendance.isOnBreak ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[11px] font-semibold text-slate-400">Select Break Type:</label>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
-                          {['Lunch Break', 'Tea Break', 'Short Break'].map((bType) => (
-                            <button
-                              key={bType}
-                              onClick={() => setSelectedBreakType(bType)}
-                              className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
-                                selectedBreakType === bType
-                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                                  : 'text-slate-400 hover:text-slate-200'
-                              }`}
-                            >
-                              {bType.split(' ')[0]}
-                            </button>
-                          ))}
-                        </div>
-
-                        <button
-                          onClick={() => startBreak(selectedBreakType)}
-                          className="w-full py-3 px-5 rounded-2xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
-                        >
-                          <Coffee className="w-4 h-4" />
-                          <span>Start {selectedBreakType}</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={endBreak}
-                        className="w-full py-3.5 px-5 rounded-2xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>End Break (Back to Work)</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={checkOut}
-                      className="w-full py-3 px-5 rounded-2xl text-xs font-bold bg-rose-600/90 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all mt-1"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Punch Out (Check Out)</span>
-                    </button>
-                  </>
-                ) : (
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
-                      <Check className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-white block">
-                        Shift Completed
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        {todayAttendance.checkOutDate || todayAttendance.date} at {todayAttendance.checkOut}
-                      </span>
-                    </div>
+                {role === 'Employee' ? (
+                  /* Employee Self-Service Interactive Punch Controls */
+                  !todayAttendance.checkIn ? (
                     <button
                       onClick={checkIn}
-                      className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold block mx-auto underline decoration-dotted"
+                      className="w-full py-4 px-6 rounded-2xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
                     >
-                      Re-Punch / Open New Shift
+                      <Play className="w-5 h-5 fill-current" />
+                      <span>Punch In (Check In)</span>
+                    </button>
+                  ) : !todayAttendance.checkOut ? (
+                    <>
+                      {!todayAttendance.isOnBreak ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-semibold text-slate-400">Select Break Type:</label>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
+                            {['Lunch Break', 'Tea Break', 'Short Break'].map((bType) => (
+                              <button
+                                key={bType}
+                                onClick={() => setSelectedBreakType(bType)}
+                                className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                                  selectedBreakType === bType
+                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                                    : 'text-slate-400 hover:text-slate-200'
+                                }`}
+                              >
+                                {bType.split(' ')[0]}
+                              </button>
+                            ))}
+                          </div>
+
+                          <button
+                            onClick={() => startBreak(selectedBreakType)}
+                            className="w-full py-3 px-5 rounded-2xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
+                          >
+                            <Coffee className="w-4 h-4" />
+                            <span>Start {selectedBreakType}</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={endBreak}
+                          className="w-full py-3.5 px-5 rounded-2xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>End Break (Back to Work)</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={checkOut}
+                        className="w-full py-3 px-5 rounded-2xl text-xs font-bold bg-rose-600/90 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 transform active:scale-95 transition-all mt-1"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Punch Out (Check Out)</span>
+                      </button>
+                    </>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-2">
+                      <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+                        <Check className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-white block">
+                          Shift Completed
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {todayAttendance.checkOutDate || todayAttendance.date} at {todayAttendance.checkOut}
+                        </span>
+                      </div>
+                      <button
+                        onClick={checkIn}
+                        className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold block mx-auto underline decoration-dotted"
+                      >
+                        Re-Punch / Open New Shift
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  /* Manager / Supervisor Read-Only Telemetry Panel */
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Supervisor Oversight</span>
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-white">Biometric Self-Service Locked</h4>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Punch-in and rest breaks are strictly self-service. Only Rahul Bajediyal can log check-ins and break intervals from his personal dashboard.
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Workstation Status:</span>
+                        <span className={`font-bold font-mono text-[11px] ${todayAttendance.isOnBreak ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {todayAttendance.isOnBreak ? `On ${todayAttendance.currentBreakType}` : 'Active Working'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                        <span>Work Time:</span>
+                        <span className="text-white font-bold">{todayAttendance.workingTime}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('history')}
+                      className="w-full py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-all text-center block"
+                    >
+                      View Team Attendance Sheet →
                     </button>
                   </div>
                 )}

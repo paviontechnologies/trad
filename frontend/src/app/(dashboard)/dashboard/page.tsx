@@ -430,19 +430,16 @@ export default function DashboardPage() {
 
                   <button
                     onClick={() => {
-                      if (inspectingEmp.empId === 'EMP001' && todayAttendance.isOnBreak) {
-                        endBreak();
-                      }
-                      showToast(`Break terminated for ${inspectingEmp.fullName}`, 'success');
+                      showToast(`Break return nudge sent to ${inspectingEmp.fullName}'s workstation screen`, 'info');
                     }}
                     className="p-4 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-750 text-left transition-all group"
                   >
                     <div className="flex items-center gap-2.5 text-amber-400 font-bold text-xs mb-1">
                       <Coffee className="w-4 h-4" />
-                      <span>Force Terminate Break</span>
+                      <span>Send Break Return Nudge</span>
                     </div>
                     <p className="text-[11px] text-slate-400">
-                      End current coffee or lunch break and resume productivity tracking.
+                      Send a polite desktop prompt asking employee to resume development when break ends.
                     </p>
                   </button>
 
