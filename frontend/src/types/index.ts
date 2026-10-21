@@ -63,6 +63,29 @@ export interface PunchEvent {
   note?: string;
 }
 
+export interface EmployeeAttendanceState {
+  employeeId: string;
+  empId: string;
+  employeeName: string;
+  date: string;
+  checkIn: string | null;
+  checkInDate: string;
+  checkOut: string | null;
+  checkOutDate: string | null;
+  workingTime: string;
+  breakTime: string;
+  overtime?: string;
+  workingMinutes: number;
+  breakMinutes: number;
+  isCheckedIn: boolean;
+  isOnBreak: boolean;
+  currentBreakStartTime: string | null;
+  currentBreakType: string;
+  currentBreakEmployeeName?: string;
+  breaks: BreakLog[];
+  events: PunchEvent[];
+}
+
 export interface AttendanceRecord {
   id: string;
   employeeId: string;

@@ -28,11 +28,20 @@ export const Header: React.FC = () => {
     markNotificationRead,
     markAllNotificationsRead,
     todayAttendance,
+    staffOnBreak,
   } = useAuth();
 
   const [showNotifs, setShowNotifs] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const isUserOnBreak = role === 'Employee' ? todayAttendance.isOnBreak : staffOnBreak.length > 0;
+  const breakLabel =
+    role === 'Employee'
+      ? `You are On Break (${todayAttendance.currentBreakType?.split(' ')[0] || 'Break'})`
+      : `${staffOnBreak.length} Staff On Break (${staffOnBreak
+          .map((s) => s.currentBreakEmployeeName?.split(' ')[0] || 'Staff')
+          .join(', ')})`;
 
   return (
     <header className="h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 flex items-center justify-between sticky top-0 z-20">
@@ -56,12 +65,12 @@ export const Header: React.FC = () => {
         <span className="text-emerald-400 font-semibold">112 Present</span>
         <span className="text-slate-500">•</span>
         <span className="text-slate-300">73 Active Desk</span>
-        {todayAttendance.isOnBreak ? (
+        {isUserOnBreak ? (
           <>
             <span className="text-slate-500">•</span>
             <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 animate-pulse">
               <Coffee className="w-3.5 h-3.5 text-amber-400" />
-              <span>1 Staff On Break ({role === 'Employee' ? 'You' : (todayAttendance.currentBreakEmployeeName || 'Rahul')} - {todayAttendance.currentBreakType.split(' ')[0]})</span>
+              <span>{breakLabel}</span>
             </span>
           </>
         ) : (

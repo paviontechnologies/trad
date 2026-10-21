@@ -22,15 +22,33 @@ export interface EmployeeWorkforceTelemetry {
   websites: { domain: string; category: string; duration: string; visits: number; isProductive: boolean }[];
 }
 
-export function getWorkforceTelemetryList(todayAttendance: {
-  isOnBreak: boolean;
-  currentBreakType: string;
-  currentBreakStartTime: string | null;
-  breakTime: string;
-  workingTime: string;
-  checkIn: string | null;
-  checkOut: string | null;
-}): EmployeeWorkforceTelemetry[] {
+import { EmployeeAttendanceState } from '../types';
+
+export function getWorkforceTelemetryList(
+  attendanceInput?:
+    | Record<string, EmployeeAttendanceState>
+    | {
+        isOnBreak: boolean;
+        currentBreakType: string;
+        currentBreakStartTime: string | null;
+        breakTime: string;
+        workingTime: string;
+        checkIn: string | null;
+        checkOut: string | null;
+      }
+): EmployeeWorkforceTelemetry[] {
+  const isMap = attendanceInput && typeof attendanceInput === 'object' && 'emp-1' in attendanceInput;
+  const empMap: Record<string, any> = isMap
+    ? (attendanceInput as Record<string, any>)
+    : {
+        'emp-1': attendanceInput || {},
+      };
+
+  const rahulAtt = empMap['emp-1'];
+  const aaravAtt = empMap['emp-6'];
+  const ananyaAtt = empMap['emp-7'];
+  const diyaAtt = empMap['emp-13'];
+
   return [
     {
       empId: 'EMP001',
@@ -39,19 +57,19 @@ export function getWorkforceTelemetryList(todayAttendance: {
       designation: 'Senior Software Engineer',
       roleName: 'Employee',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-      status: todayAttendance.isOnBreak ? 'ON_BREAK' : todayAttendance.checkOut ? 'OFFLINE' : 'ACTIVE',
-      productivity: todayAttendance.isOnBreak ? 88 : 94,
-      punchIn: todayAttendance.checkIn || '09:12 AM',
-      punchOut: todayAttendance.checkOut,
-      workingHours: todayAttendance.workingTime || '06h 42m',
-      breakText: todayAttendance.isOnBreak
-        ? `${todayAttendance.currentBreakType} (Started: ${todayAttendance.currentBreakStartTime || '01:15 PM'})`
-        : `${todayAttendance.breakTime} total taken`,
-      breakDurationMinutes: todayAttendance.isOnBreak ? 40 : 45,
-      activeApp: todayAttendance.isOnBreak ? 'Biometric Paused • Away from Desk' : 'VS Code • Full Stack IDE',
-      activeWindow: todayAttendance.isOnBreak ? 'Standby Screen' : 'auth-context.tsx - Refactoring Middleware',
+      status: rahulAtt?.isOnBreak ? 'ON_BREAK' : rahulAtt?.checkOut ? 'OFFLINE' : 'ACTIVE',
+      productivity: rahulAtt?.isOnBreak ? 88 : 94,
+      punchIn: rahulAtt?.checkIn || '09:12 AM',
+      punchOut: rahulAtt?.checkOut || null,
+      workingHours: rahulAtt?.workingTime || '06h 42m',
+      breakText: rahulAtt?.isOnBreak
+        ? `${rahulAtt.currentBreakType || 'Tea Break'} (Started: ${rahulAtt.currentBreakStartTime || '01:15 PM'})`
+        : rahulAtt?.breakTime ? `${rahulAtt.breakTime} total taken` : '00h 45m total taken',
+      breakDurationMinutes: rahulAtt?.isOnBreak ? 40 : rahulAtt?.breakMinutes || 45,
+      activeApp: rahulAtt?.isOnBreak ? 'Biometric Paused • Away from Desk' : 'VS Code • Full Stack IDE',
+      activeWindow: rahulAtt?.isOnBreak ? 'Standby Screen' : 'auth-context.tsx - Refactoring Middleware',
       currentTask: 'Enterprise RBAC Authentication & Real-Time Sync',
-      idleMinutes: todayAttendance.isOnBreak ? 42 : 18,
+      idleMinutes: rahulAtt?.isOnBreak ? 42 : 18,
       activeMinutes: 384,
       tasks: [
         { id: 1, title: 'Refactor Auth middleware for RBAC', priority: 'HIGH', status: 'COMPLETED' },
@@ -223,17 +241,19 @@ export function getWorkforceTelemetryList(todayAttendance: {
       designation: 'Backend Architect',
       roleName: 'Developer',
       avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
-      status: 'ACTIVE',
-      productivity: 96,
-      punchIn: '09:00 AM',
-      punchOut: null,
-      workingHours: '07h 05m',
-      breakText: 'Lunch: 35m taken',
-      breakDurationMinutes: 35,
-      activeApp: 'IntelliJ IDEA & Postman',
-      activeWindow: 'Distributed Redis Cluster • Sharding Config',
+      status: aaravAtt?.isOnBreak ? 'ON_BREAK' : aaravAtt?.checkOut ? 'OFFLINE' : 'ACTIVE',
+      productivity: aaravAtt?.isOnBreak ? 85 : 96,
+      punchIn: aaravAtt?.checkIn || '09:00 AM',
+      punchOut: aaravAtt?.checkOut || null,
+      workingHours: aaravAtt?.workingTime || '07h 05m',
+      breakText: aaravAtt?.isOnBreak
+        ? `${aaravAtt.currentBreakType || 'Lunch Break'} (Started: ${aaravAtt.currentBreakStartTime || '01:00 PM'})`
+        : aaravAtt?.breakTime ? `${aaravAtt.breakTime} total taken` : 'Lunch: 35m taken',
+      breakDurationMinutes: aaravAtt?.isOnBreak ? 35 : aaravAtt?.breakMinutes || 35,
+      activeApp: aaravAtt?.isOnBreak ? 'Biometric Paused • Away from Desk' : 'IntelliJ IDEA & Postman',
+      activeWindow: aaravAtt?.isOnBreak ? 'Standby Screen' : 'Distributed Redis Cluster • Sharding Config',
       currentTask: 'Sub-millisecond Market Feed Ingestion Service',
-      idleMinutes: 14,
+      idleMinutes: aaravAtt?.isOnBreak ? 40 : 14,
       activeMinutes: 411,
       tasks: [
         { id: 1, title: 'Deploy Redis cluster sharding to Staging', priority: 'HIGH', status: 'COMPLETED' },
@@ -258,17 +278,19 @@ export function getWorkforceTelemetryList(todayAttendance: {
       designation: 'Frontend Lead',
       roleName: 'Developer',
       avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80',
-      status: 'ACTIVE',
-      productivity: 91,
-      punchIn: '09:15 AM',
-      punchOut: null,
-      workingHours: '06h 50m',
-      breakText: 'Lunch: 40m taken',
-      breakDurationMinutes: 40,
-      activeApp: 'VS Code & Figma Design Tool',
-      activeWindow: 'Tailwind Glassmorphic Theme Components',
+      status: ananyaAtt?.isOnBreak ? 'ON_BREAK' : ananyaAtt?.checkOut ? 'OFFLINE' : 'ACTIVE',
+      productivity: ananyaAtt?.isOnBreak ? 84 : 91,
+      punchIn: ananyaAtt?.checkIn || '09:15 AM',
+      punchOut: ananyaAtt?.checkOut || null,
+      workingHours: ananyaAtt?.workingTime || '06h 50m',
+      breakText: ananyaAtt?.isOnBreak
+        ? `${ananyaAtt.currentBreakType || 'Tea Break'} (Started: ${ananyaAtt.currentBreakStartTime || '01:30 PM'})`
+        : ananyaAtt?.breakTime ? `${ananyaAtt.breakTime} total taken` : 'Lunch: 40m taken',
+      breakDurationMinutes: ananyaAtt?.isOnBreak ? 30 : ananyaAtt?.breakMinutes || 40,
+      activeApp: ananyaAtt?.isOnBreak ? 'Biometric Paused • Away from Desk' : 'VS Code & Figma Design Tool',
+      activeWindow: ananyaAtt?.isOnBreak ? 'Standby Screen' : 'Tailwind Glassmorphic Theme Components',
       currentTask: 'Executive Workforce Telemetry Dashboard Redesign',
-      idleMinutes: 24,
+      idleMinutes: ananyaAtt?.isOnBreak ? 38 : 24,
       activeMinutes: 386,
       tasks: [
         { id: 1, title: 'Implement Responsive Break Telemetry Cards', priority: 'HIGH', status: 'COMPLETED' },
@@ -441,17 +463,19 @@ export function getWorkforceTelemetryList(todayAttendance: {
       designation: 'QA Automation Engineer',
       roleName: 'Developer',
       avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80',
-      status: 'ACTIVE',
-      productivity: 90,
-      punchIn: '09:20 AM',
-      punchOut: null,
-      workingHours: '06h 45m',
-      breakText: 'Tea: 15m taken',
-      breakDurationMinutes: 15,
-      activeApp: 'Playwright & GitHub Actions',
-      activeWindow: 'E2E Regression Matrix • Biometric Punch Suite',
+      status: diyaAtt?.isOnBreak ? 'ON_BREAK' : diyaAtt?.checkOut ? 'OFFLINE' : 'ACTIVE',
+      productivity: diyaAtt?.isOnBreak ? 82 : 90,
+      punchIn: diyaAtt?.checkIn || '09:20 AM',
+      punchOut: diyaAtt?.checkOut || null,
+      workingHours: diyaAtt?.workingTime || '06h 45m',
+      breakText: diyaAtt?.isOnBreak
+        ? `${diyaAtt.currentBreakType || 'Tea Break'} (Started: ${diyaAtt.currentBreakStartTime || '11:00 AM'})`
+        : diyaAtt?.breakTime ? `${diyaAtt.breakTime} total taken` : 'Tea: 15m taken',
+      breakDurationMinutes: diyaAtt?.isOnBreak ? 20 : diyaAtt?.breakMinutes || 15,
+      activeApp: diyaAtt?.isOnBreak ? 'Biometric Paused • Away from Desk' : 'Playwright & GitHub Actions',
+      activeWindow: diyaAtt?.isOnBreak ? 'Standby Screen' : 'E2E Regression Matrix • Biometric Punch Suite',
       currentTask: 'End-to-End Automated Test Coverage for Release 2.4',
-      idleMinutes: 25,
+      idleMinutes: diyaAtt?.isOnBreak ? 30 : 25,
       activeMinutes: 380,
       tasks: [
         { id: 1, title: 'Automate Attendance Check-in E2E tests', priority: 'HIGH', status: 'COMPLETED' },

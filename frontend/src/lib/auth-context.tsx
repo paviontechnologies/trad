@@ -14,6 +14,7 @@ import {
   AuditLog,
   Trade,
   NotificationItem,
+  EmployeeAttendanceState,
 } from '../types';
 import {
   initialEmployees,
@@ -24,6 +25,7 @@ import {
   initialAuditLogs,
   initialTrades,
   initialNotifications,
+  initialEmployeeAttendanceMap,
 } from './data';
 
 interface AuthContextType {
@@ -45,24 +47,9 @@ interface AuthContextType {
   rejectLeave: (id: string) => void;
 
   attendanceRecords: AttendanceRecord[];
-  todayAttendance: {
-    date: string;
-    checkIn: string | null;
-    checkInDate: string;
-    checkOut: string | null;
-    checkOutDate: string | null;
-    workingTime: string;
-    breakTime: string;
-    workingMinutes: number;
-    breakMinutes: number;
-    isCheckedIn: boolean;
-    isOnBreak: boolean;
-    currentBreakStartTime: string | null;
-    currentBreakType: string;
-    currentBreakEmployeeName?: string;
-    breaks: BreakLog[];
-    events: PunchEvent[];
-  };
+  employeeAttendanceMap: Record<string, EmployeeAttendanceState>;
+  staffOnBreak: EmployeeAttendanceState[];
+  todayAttendance: EmployeeAttendanceState & { currentBreakEmployeeName?: string };
   checkIn: () => void;
   startBreak: (type?: string) => void;
   endBreak: () => void;
@@ -108,85 +95,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-  // Live Attendance for Employee (Rahul Bajediyal)
-  const [todayAttendance, setTodayAttendance] = useState({
-    date: '19 Oct 2026',
-    checkIn: '09:12 AM',
-    checkInDate: '19 Oct 2026',
-    checkOut: null as string | null,
-    checkOutDate: null as string | null,
-    workingTime: '06h 42m',
-    breakTime: '01h 00m',
-    workingMinutes: 402,
-    breakMinutes: 60,
-    isCheckedIn: true,
-    isOnBreak: false,
-    currentBreakStartTime: null as string | null,
-    currentBreakType: 'Lunch Break',
-    currentBreakEmployeeName: undefined as string | undefined,
-    breaks: [
-      {
-        id: 'brk-1',
-        type: 'Lunch Break',
-        startTime: '01:15 PM',
-        startDate: '19 Oct 2026',
-        endTime: '01:55 PM',
-        durationMinutes: 40,
-        durationFormatted: '40 mins',
-      },
-      {
-        id: 'brk-2',
-        type: 'Tea / Coffee Break',
-        startTime: '04:30 PM',
-        startDate: '19 Oct 2026',
-        endTime: '04:50 PM',
-        durationMinutes: 20,
-        durationFormatted: '20 mins',
-      },
-    ] as BreakLog[],
-    events: [
-      {
-        id: 'ev-1',
-        type: 'PUNCH_IN',
-        label: 'Shift Punch In',
-        time: '09:12 AM',
-        date: '19 Oct 2026',
-        note: 'Biometric Station • On-Time Entry',
-      },
-      {
-        id: 'ev-2',
-        type: 'BREAK_START',
-        label: 'Started Lunch Break',
-        time: '01:15 PM',
-        date: '19 Oct 2026',
-        note: 'Cafeteria Floor 2',
-      },
-      {
-        id: 'ev-3',
-        type: 'BREAK_END',
-        label: 'Completed Lunch Break',
-        time: '01:55 PM',
-        date: '19 Oct 2026',
-        note: 'Duration: 40 mins',
-      },
-      {
-        id: 'ev-4',
-        type: 'BREAK_START',
-        label: 'Started Tea Break',
-        time: '04:30 PM',
-        date: '19 Oct 2026',
-        note: 'Pantry Zone',
-      },
-      {
-        id: 'ev-5',
-        type: 'BREAK_END',
-        label: 'Completed Tea Break',
-        time: '04:50 PM',
-        date: '19 Oct 2026',
-        note: 'Duration: 20 mins',
-      },
-    ] as PunchEvent[],
-  });
+  // Per-Employee Live Attendance & Break States
+  const [employeeAttendanceMap, setEmployeeAttendanceMap] = useState<Record<string, EmployeeAttendanceState>>(
+    initialEmployeeAttendanceMap
+  );
+
+  const activeEmpId = user?.employeeId || (role === 'Employee' ? 'emp-1' : 'emp-1');
+  const todayAttendance: EmployeeAttendanceState & { currentBreakEmployeeName?: string } =
+    employeeAttendanceMap[activeEmpId] ||
+    initialEmployeeAttendanceMap[activeEmpId] ||
+    employeeAttendanceMap['emp-1'];
+
+  const staffOnBreak: EmployeeAttendanceState[] = Object.values(employeeAttendanceMap).filter((att) => att.isOnBreak);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
@@ -440,14 +360,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     breaks: BreakLog[],
     breakMins: number,
     workingMins: number,
-    statusOverride?: 'Present' | 'Late' | 'On Break'
+    statusOverride?: 'Present' | 'Late' | 'On Break',
+    empIdParam?: string
   ) => {
     setAttendanceRecords((prev) => {
       const todayDate = '19 Oct 2026';
-      const targetEmpId = user?.employeeId || 'emp-1';
+      const targetEmpId = empIdParam || user?.employeeId || 'emp-1';
       const empRecord = employees.find((e) => e.id === targetEmpId || e.empId === targetEmpId);
-      const resolvedEmpCode = empRecord?.empId || 'EMP001';
-      const resolvedName = user?.fullName || empRecord?.fullName || 'Rahul Bajediyal';
+      const resolvedEmpCode =
+        empRecord?.empId ||
+        (targetEmpId === 'emp-6'
+          ? 'EMP006'
+          : targetEmpId === 'emp-7'
+          ? 'EMP007'
+          : targetEmpId === 'emp-13'
+          ? 'EMP013'
+          : 'EMP001');
+      const resolvedName =
+        empRecord?.fullName ||
+        (targetEmpId === 'emp-6'
+          ? 'Aarav Deshmukh'
+          : targetEmpId === 'emp-7'
+          ? 'Ananya Iyer'
+          : targetEmpId === 'emp-13'
+          ? 'Diya Patel'
+          : user?.fullName || 'Rahul Bajediyal');
       const resolvedDept = empRecord?.departmentName || 'Information Technology';
 
       const existingIdx = prev.findIndex(
@@ -486,6 +423,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       showToast('Permission Denied: Only employees can log biometric check-ins from their portal.', 'error');
       return;
     }
+    const targetEmpId = user?.employeeId || 'emp-1';
     const time = formatTime12();
     const dateStr = '19 Oct 2026';
 
@@ -498,21 +436,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       note: 'Biometric Station • Checked In On-Time',
     };
 
-    setTodayAttendance((prev) => {
-      syncAttendanceDataSheet(time, null, prev.breaks, prev.breakMinutes, prev.workingMinutes, 'Present');
-      return {
-        ...prev,
+    setEmployeeAttendanceMap((prev) => {
+      const empRecord = employees.find((e) => e.id === targetEmpId || e.empId === targetEmpId);
+      const prevEmp: EmployeeAttendanceState = prev[targetEmpId] || initialEmployeeAttendanceMap[targetEmpId] || {
+        employeeId: targetEmpId,
+        empId: empRecord?.empId || (targetEmpId === 'emp-6' ? 'EMP006' : targetEmpId === 'emp-7' ? 'EMP007' : targetEmpId === 'emp-13' ? 'EMP013' : 'EMP001'),
+        employeeName: empRecord?.fullName || (targetEmpId === 'emp-6' ? 'Aarav Deshmukh' : targetEmpId === 'emp-7' ? 'Ananya Iyer' : targetEmpId === 'emp-13' ? 'Diya Patel' : user?.fullName || 'Rahul Bajediyal'),
+        date: dateStr,
         checkIn: time,
         checkInDate: dateStr,
         checkOut: null,
         checkOutDate: null,
-        isCheckedIn: true,
+        workingTime: '00h 00m',
+        workingMinutes: 0,
+        breakTime: '00h 00m',
+        breakMinutes: 0,
+        overtime: '00h 00m',
         isOnBreak: false,
+        isCheckedIn: true,
         currentBreakStartTime: null,
-        events: [newEvent, ...prev.events],
+        currentBreakType: 'Tea / Short Break',
+        breaks: [],
+        events: [],
+      };
+
+      syncAttendanceDataSheet(time, null, prevEmp.breaks, prevEmp.breakMinutes, prevEmp.workingMinutes, 'Present', targetEmpId);
+
+      return {
+        ...prev,
+        [targetEmpId]: {
+          ...prevEmp,
+          checkIn: time,
+          checkInDate: dateStr,
+          checkOut: null,
+          checkOutDate: null,
+          isCheckedIn: true,
+          isOnBreak: false,
+          currentBreakStartTime: null,
+          events: [newEvent, ...prevEmp.events],
+        },
       };
     });
-    addAuditLog('PUNCH_IN', 'Attendance', `Employee punched in at ${time} on ${dateStr}`);
+
+    addAuditLog('PUNCH_IN', 'Attendance', `${user?.fullName || 'Employee'} punched in at ${time} on ${dateStr}`);
     showToast(`Checked in successfully at ${time}! Have a productive day.`, 'success');
   };
 
@@ -521,6 +487,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       showToast('Permission Denied: Managers cannot start breaks for employees. Breaks are strictly employee self-service.', 'error');
       return;
     }
+    const targetEmpId = user?.employeeId || 'emp-1';
     const time = formatTime12();
     const dateStr = '19 Oct 2026';
     const breakId = `brk-${Date.now()}`;
@@ -545,21 +512,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       note: 'Live break timer active',
     };
 
-    setTodayAttendance((prev) => {
-      const updatedBreaks = [newBreak, ...prev.breaks];
-      syncAttendanceDataSheet(prev.checkIn, null, updatedBreaks, prev.breakMinutes, prev.workingMinutes, 'Present');
+    setEmployeeAttendanceMap((prev) => {
+      const empRecord = employees.find((e) => e.id === targetEmpId || e.empId === targetEmpId);
+      const prevEmp: EmployeeAttendanceState = prev[targetEmpId] || initialEmployeeAttendanceMap[targetEmpId] || {
+        employeeId: targetEmpId,
+        empId: empRecord?.empId || (targetEmpId === 'emp-6' ? 'EMP006' : targetEmpId === 'emp-7' ? 'EMP007' : targetEmpId === 'emp-13' ? 'EMP013' : 'EMP001'),
+        employeeName: empRecord?.fullName || (targetEmpId === 'emp-6' ? 'Aarav Deshmukh' : targetEmpId === 'emp-7' ? 'Ananya Iyer' : targetEmpId === 'emp-13' ? 'Diya Patel' : user?.fullName || 'Rahul Bajediyal'),
+        date: dateStr,
+        checkIn: '09:00 AM',
+        checkInDate: dateStr,
+        checkOut: null,
+        checkOutDate: null,
+        workingTime: '04h 30m',
+        workingMinutes: 270,
+        breakTime: '00h 00m',
+        breakMinutes: 0,
+        overtime: '00h 00m',
+        isOnBreak: false,
+        isCheckedIn: true,
+        currentBreakStartTime: null,
+        currentBreakType: type,
+        breaks: [],
+        events: [],
+      };
+
+      const updatedBreaks = [newBreak, ...prevEmp.breaks];
+      syncAttendanceDataSheet(prevEmp.checkIn, null, updatedBreaks, prevEmp.breakMinutes, prevEmp.workingMinutes, 'On Break', targetEmpId);
+
       return {
         ...prev,
-        isOnBreak: true,
-        currentBreakStartTime: time,
-        currentBreakType: type,
-        currentBreakEmployeeName: user?.fullName || 'Rahul Bajediyal',
-        breaks: updatedBreaks,
-        events: [newEvent, ...prev.events],
+        [targetEmpId]: {
+          ...prevEmp,
+          isOnBreak: true,
+          currentBreakStartTime: time,
+          currentBreakType: type,
+          currentBreakEmployeeName: user?.fullName || 'Employee',
+          breaks: updatedBreaks,
+          events: [newEvent, ...prevEmp.events],
+        },
       };
     });
 
-    addAuditLog('BREAK_START', 'Attendance', `Started ${type} at ${time}`);
+    addAuditLog('BREAK_START', 'Attendance', `${user?.fullName || 'Employee'} started ${type} at ${time}`);
     showToast(`${type} started at ${time}. Live timer running!`, 'info');
   };
 
@@ -568,18 +562,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       showToast('Permission Denied: Managers cannot end breaks for employees. Breaks must be ended by the employee.', 'error');
       return;
     }
+    const targetEmpId = user?.employeeId || 'emp-1';
     const time = formatTime12();
     const dateStr = '19 Oct 2026';
 
-    setTodayAttendance((prev) => {
-      const firstBreak = prev.breaks[0];
+    setEmployeeAttendanceMap((prev) => {
+      const prevEmp = prev[targetEmpId] || initialEmployeeAttendanceMap[targetEmpId];
+      if (!prevEmp) return prev;
+
+      const firstBreak = prevEmp.breaks[0];
       let addedMinutes = 15;
       if (firstBreak && firstBreak.startTimestamp) {
         const diffSec = Math.round((Date.now() - firstBreak.startTimestamp) / 1000);
         addedMinutes = Math.max(1, Math.round(diffSec / 60));
       }
 
-      const updatedBreaks = prev.breaks.map((b, idx) => {
+      const updatedBreaks = prevEmp.breaks.map((b, idx) => {
         if (idx === 0 && !b.endTime) {
           return {
             ...b,
@@ -594,32 +592,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const newEvent: PunchEvent = {
         id: `ev-${Date.now()}`,
         type: 'BREAK_END',
-        label: `Ended ${prev.currentBreakType || 'Break'}`,
+        label: `Ended ${prevEmp.currentBreakType || 'Break'}`,
         time,
         date: dateStr,
         note: `Duration: ${addedMinutes} mins (Returned to work)`,
       };
 
-      const newTotalMinutes = prev.breakMinutes + addedMinutes;
+      const newTotalMinutes = prevEmp.breakMinutes + addedMinutes;
       const hrs = Math.floor(newTotalMinutes / 60);
       const mins = newTotalMinutes % 60;
       const formattedTotal = `${hrs.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m`;
 
-      syncAttendanceDataSheet(prev.checkIn, null, updatedBreaks, newTotalMinutes, prev.workingMinutes, 'Present');
+      syncAttendanceDataSheet(prevEmp.checkIn, null, updatedBreaks, newTotalMinutes, prevEmp.workingMinutes, 'Present', targetEmpId);
 
       return {
         ...prev,
-        isOnBreak: false,
-        currentBreakStartTime: null,
-        currentBreakEmployeeName: undefined,
-        breakMinutes: newTotalMinutes,
-        breakTime: formattedTotal,
-        breaks: updatedBreaks,
-        events: [newEvent, ...prev.events],
+        [targetEmpId]: {
+          ...prevEmp,
+          isOnBreak: false,
+          currentBreakStartTime: null,
+          currentBreakEmployeeName: undefined,
+          breakMinutes: newTotalMinutes,
+          breakTime: formattedTotal,
+          breaks: updatedBreaks,
+          events: [newEvent, ...prevEmp.events],
+        },
       };
     });
 
-    addAuditLog('BREAK_END', 'Attendance', `Returned from break at ${time}`);
+    addAuditLog('BREAK_END', 'Attendance', `${user?.fullName || 'Employee'} returned from break at ${time}`);
     showToast(`Break ended at ${time}. Welcome back to work!`, 'success');
   };
 
@@ -628,6 +629,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       showToast('Permission Denied: Only employees can punch out from their active shift.', 'error');
       return;
     }
+    const targetEmpId = user?.employeeId || 'emp-1';
     const time = formatTime12();
     const dateStr = '19 Oct 2026';
 
@@ -640,20 +642,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       note: 'Shift completed • Daily records finalized',
     };
 
-    setTodayAttendance((prev) => {
-      syncAttendanceDataSheet(prev.checkIn, time, prev.breaks, prev.breakMinutes, prev.workingMinutes, 'Present');
+    setEmployeeAttendanceMap((prev) => {
+      const prevEmp = prev[targetEmpId] || initialEmployeeAttendanceMap[targetEmpId];
+      if (!prevEmp) return prev;
+
+      syncAttendanceDataSheet(prevEmp.checkIn, time, prevEmp.breaks, prevEmp.breakMinutes, prevEmp.workingMinutes, 'Present', targetEmpId);
+
       return {
         ...prev,
-        checkOut: time,
-        checkOutDate: dateStr,
-        isCheckedIn: false,
-        isOnBreak: false,
-        currentBreakStartTime: null,
-        events: [newEvent, ...prev.events],
+        [targetEmpId]: {
+          ...prevEmp,
+          checkOut: time,
+          checkOutDate: dateStr,
+          isCheckedIn: false,
+          isOnBreak: false,
+          currentBreakStartTime: null,
+          events: [newEvent, ...prevEmp.events],
+        },
       };
     });
 
-    addAuditLog('PUNCH_OUT', 'Attendance', `Employee checked out at ${time} on ${dateStr}`);
+    addAuditLog('PUNCH_OUT', 'Attendance', `${user?.fullName || 'Employee'} checked out at ${time} on ${dateStr}`);
     showToast(`Checked out successfully at ${time}. Great work today!`, 'success');
   };
 
@@ -732,6 +741,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         rejectLeave,
         attendanceRecords,
         todayAttendance,
+        employeeAttendanceMap,
+        staffOnBreak,
         checkIn,
         startBreak,
         endBreak,

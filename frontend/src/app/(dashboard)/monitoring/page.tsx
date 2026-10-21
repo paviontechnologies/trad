@@ -33,10 +33,18 @@ import {
 } from 'recharts';
 
 export default function MonitoringPage() {
-  const { todayAttendance } = useAuth();
-  const [selectedEmpId, setSelectedEmpId] = useState('EMP001');
+  const { todayAttendance, employeeAttendanceMap, user } = useAuth();
+  const defaultEmpId =
+    user?.employeeId === 'emp-6'
+      ? 'EMP006'
+      : user?.employeeId === 'emp-7'
+      ? 'EMP007'
+      : user?.employeeId === 'emp-13'
+      ? 'EMP013'
+      : 'EMP001';
+  const [selectedEmpId, setSelectedEmpId] = useState(defaultEmpId);
 
-  const telemetryList = getWorkforceTelemetryList(todayAttendance);
+  const telemetryList = getWorkforceTelemetryList(employeeAttendanceMap || todayAttendance);
   const currentEmp = telemetryList.find((e) => e.empId === selectedEmpId) || telemetryList[0];
 
   const productivityValue = currentEmp.productivity || 0;

@@ -92,6 +92,7 @@ export default function DashboardPage() {
     requestTrade,
     showToast,
     currentEmployee,
+    employeeAttendanceMap,
   } = useAuth();
 
   // Workforce filtering and Inspector state for Admin and Manager
@@ -101,7 +102,7 @@ export default function DashboardPage() {
   const [inspectingEmp, setInspectingEmp] = useState<EmployeeWorkforceTelemetry | null>(null);
   const [activeInspectorTab, setActiveInspectorTab] = useState<'overview' | 'tasks' | 'apps' | 'admin'>('overview');
 
-  const allTelemetryList = getWorkforceTelemetryList(todayAttendance);
+  const allTelemetryList = getWorkforceTelemetryList(employeeAttendanceMap || todayAttendance);
 
   const filteredTelemetryList = allTelemetryList.filter((emp) => {
     const matchesDept = deptFilter === 'ALL' || emp.departmentName === deptFilter;
@@ -504,20 +505,27 @@ export default function DashboardPage() {
       { title: 'Present Today', value: '112', sub: '87.5% attendance rate', icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
       {
         title: 'Staff On Break',
-        value: todayAttendance.isOnBreak ? '1' : '0',
-        sub: todayAttendance.isOnBreak
-          ? `${todayAttendance.currentBreakEmployeeName?.split(' ')[0] || 'Staff'} (${todayAttendance.currentBreakType.split(' ')[0]})`
-          : 'All 112 at desk',
+        value: staffOnBreakList.length.toString(),
+        sub:
+          staffOnBreakList.length > 0
+            ? `${staffOnBreakList.map((e) => e.fullName.split(' ')[0]).join(', ')} on break`
+            : 'All 112 at desk',
         icon: Coffee,
-        color: todayAttendance.isOnBreak ? 'text-amber-300' : 'text-slate-400',
-        bg: todayAttendance.isOnBreak ? 'bg-amber-500/20' : 'bg-slate-800/40',
-        border: todayAttendance.isOnBreak ? 'border-amber-500/40 shadow-lg shadow-amber-500/10' : 'border-slate-800',
+        color: staffOnBreakList.length > 0 ? 'text-amber-300' : 'text-slate-400',
+        bg: staffOnBreakList.length > 0 ? 'bg-amber-500/20' : 'bg-slate-800/40',
+        border:
+          staffOnBreakList.length > 0
+            ? 'border-amber-500/40 shadow-lg shadow-amber-500/10'
+            : 'border-slate-800',
       },
       { title: 'On Leave', value: '8', sub: 'Annual & casual leaves', icon: CalendarDays, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
       {
         title: 'Currently Online',
-        value: todayAttendance.isOnBreak ? '73' : '74',
-        sub: todayAttendance.isOnBreak ? '73 Active • 1 on Break' : 'Live active desktop sessions',
+        value: staffOnBreakList.length > 0 ? `${74 - staffOnBreakList.length}` : '74',
+        sub:
+          staffOnBreakList.length > 0
+            ? `${74 - staffOnBreakList.length} Active • ${staffOnBreakList.length} on Break`
+            : 'Live active desktop sessions',
         icon: Wifi,
         color: 'text-cyan-400',
         bg: 'bg-cyan-500/10',
@@ -1299,7 +1307,9 @@ export default function DashboardPage() {
             <span className="text-xs text-slate-400 font-medium">My Team Size</span>
             <div className="text-2xl font-black text-white mt-1">12 Engineers</div>
             <span className="text-[10px] text-emerald-400 font-semibold">
-              {todayAttendance.isOnBreak ? '10 Active • 1 On Break' : '11 Active Online Now'}
+              {staffOnBreakList.length > 0
+                ? `${11 - staffOnBreakList.length} Active • ${staffOnBreakList.length} On Break`
+                : '11 Active Online Now'}
             </span>
           </div>
           <div className="p-4 rounded-2xl bg-slate-900 border border-indigo-500/30 shadow-xl">
@@ -1332,7 +1342,9 @@ export default function DashboardPage() {
               </p>
             </div>
             <span className="text-xs text-emerald-400 font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              {todayAttendance.isOnBreak ? '3 Online • 1 On Break' : '4 Online Active'}
+              {staffOnBreakList.length > 0
+                ? `${4 - staffOnBreakList.length} Online • ${staffOnBreakList.length} On Break`
+                : '4 Online Active'}
             </span>
           </div>
 
